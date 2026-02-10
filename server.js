@@ -33,8 +33,8 @@ app.get('/api/entries', (req, res) => {
     const params = [];
     
     if (module) {
-        sql += ' AND module = ?';
-        params.push(module);
+        sql += ' AND UPPER(module) = ?';
+        params.push(module.toUpperCase());
     }
     
     if (search) {

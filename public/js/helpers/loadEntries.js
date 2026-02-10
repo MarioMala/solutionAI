@@ -5,7 +5,7 @@ export async function loadEntries(filterModule, filterSearch) {
     const search = filterSearch;
     
     let url = `${API_URL}/entries?`;
-    if (module) url += `module=${encodeURIComponent(module)}&`;
+    if (module && module !== '') url += `module=${encodeURIComponent(module)}&`;
     if (search) url += `search=${encodeURIComponent(search)}`;
     
     try {

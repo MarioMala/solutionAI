@@ -75,13 +75,14 @@ async function loadModulesData() {
 entryForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
+    const id = entryId.value;
+    const moduleValue = moduleSelectGroup.style.display !== 'none' ? moduleInput.value : moduleDisplay.textContent;
+    
     const entryData = {
-        module: moduleInput.value,
+        module: moduleValue,
         title: titleInput.value,
         content: contentInput.value
     };
-    
-    const id = entryId.value;
     
     try {
         await saveEntry(entryData, id || null);
