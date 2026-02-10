@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3001/api';
+import { API_URL } from '../constants.js';
 
 export async function saveEntry(entryData, id = null) {
     let url = id ? `${API_URL}/entries/${id}` : `${API_URL}/entries`;

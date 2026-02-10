@@ -8,7 +8,7 @@ import { saveEntry } from './helpers/saveEntry.js';
 import { resetForm } from './helpers/resetForm.js';
 
 // API URL
-const API_URL = 'http://localhost:3001/api';
+import { API_URL } from './constants.js';
 
 // Elementy DOM
 const entryForm = document.getElementById('entry-form');
