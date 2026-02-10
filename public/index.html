@@ -25,7 +25,7 @@
             <h2 id="form-title">Dodaj nowy wpis</h2>
             <form id="entry-form">
                 <input type="hidden" id="entry-id">
-                <div class="form-group">
+                <div class="form-group" id="module-select-group">
                     <label for="module">Moduł:</label>
                     <select id="module" required>
                         <option value="">Wybierz moduł...</option>
@@ -37,6 +37,10 @@
                         <option value="WADM">WADM</option>
                         <option value="KDW">KDW</option>
                     </select>
+                </div>
+                <div class="form-group" id="module-display-group" style="display: none;">
+                    <label>Moduł:</label>
+                    <span id="module-display"></span>
                 </div>
                 <div class="form-group">
                     <label for="title">Tytuł:</label>

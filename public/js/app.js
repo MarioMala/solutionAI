@@ -14,6 +14,9 @@ const API_URL = 'http://localhost:3001/api';
 const entryForm = document.getElementById('entry-form');
 const entryId = document.getElementById('entry-id');
 const moduleInput = document.getElementById('module');
+const moduleSelectGroup = document.getElementById('module-select-group');
+const moduleDisplayGroup = document.getElementById('module-display-group');
+const moduleDisplay = document.getElementById('module-display');
 const titleInput = document.getElementById('title');
 const contentInput = document.getElementById('content');
 const formTitle = document.getElementById('form-title');
@@ -82,7 +85,7 @@ entryForm.addEventListener('submit', async (e) => {
     
     try {
         await saveEntry(entryData, id || null);
-        resetForm(entryForm, entryId, formTitle, submitBtn, cancelBtn, formSection, addEntryBtn);
+        resetForm(entryForm, entryId, formTitle, submitBtn, cancelBtn, formSection, addEntryBtn, moduleSelectGroup, moduleDisplayGroup);
         loadEntriesData();
         loadModulesData();
     } catch (error) {
@@ -102,7 +105,7 @@ addEntryBtn.addEventListener('click', () => {
 cancelBtn.addEventListener('click', () => {
     formSection.style.display = 'none';
     addEntryBtn.style.display = 'inline-block';
-    resetForm(entryForm, entryId, formTitle, submitBtn, cancelBtn, formSection, addEntryBtn);
+    resetForm(entryForm, entryId, formTitle, submitBtn, cancelBtn, formSection, addEntryBtn, moduleSelectGroup, moduleDisplayGroup);
 });
 
 // Wyszukiwanie przyrostowe
@@ -134,8 +137,14 @@ window.editEntry = async function(id) {
         if (entry) {
             entryId.value = entry.id;
             moduleInput.value = entry.module;
+            moduleDisplay.textContent = entry.module;
             titleInput.value = entry.title;
             contentInput.value = entry.content || '';
+            
+            // Pokaż wyświetlanie modułu (tylko do odczytu), ukryj select i usuń required
+            moduleSelectGroup.style.display = 'none';
+            moduleDisplayGroup.style.display = 'block';
+            moduleInput.removeAttribute('required');
             
             formTitle.textContent = 'Edytuj wpis';
             submitBtn.textContent = 'Zapisz';

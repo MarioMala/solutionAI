@@ -1,0 +1,931 @@
+{
+  "srs": [
+    {
+      "id": 1,
+      "title": "godzina zamknięcia doby",
+      "content": "Sprawdzamy w tabeli SRS_RDJ_NAGLOWEK"
+    },
+    {
+      "id": 2,
+      "title": " usuwanie korekt",
+      "content": "Usunąć korektę można tylko wtedy gdy została wysłana do FOZS - PRZEKAZANE DO FOZS (O*) ZAFAKTUROWANE korekty można usuwać tylko od ostatniego numeru w ramach wystawcy z poziomu programu NIE MOŻE BYĆ DZIUR W NUMERACJI. (ZMIANA STATUSU W TABELI SEK_KORFK z 2 na 1). OBCNIE NIE USUWAMY KOREKT Z UWAGI NA PDF WYSYŁANE DO SYSTEMU"
+    },
+    {
+      "title": "B2B wysłanie do akceptacji",
+      "content": "Zamówienia internetowe - Przeglądaj po znalezieniu konkretnego zamówienia przycisk KOREKTY i przycisk  ZATWIERDŹ  Kalkulacja wartościowa -> Akceptacja dla OZS",
+      "create_at": "07.03.2025, 07:17:37",
+      "id": 4
+    },
+    {
+      "title": "zdublowane dokumenty (przekroczenie kontenera)",
+      "content": "Oczywiście na 4 miejscu w numeracji wstawiliśmy 3 (było 0) w porozumieniu z użytkownikiem 🙂 ale to on osobiście w kartotekach SCM w numeracji wystawców dokonał zmian, by był tego świadom.  W dniu 24.10.2024 o 07:52, Wojciech Dombek pisze: Zaznaczam, iż w KSP wg ogólnych założeń numer polecenia, na tym samym wystawcy na 2-ch różnych ruchach jest poprawny i nie traktowany jako dubel. Dotyczyło polecenia 1910700009, które było i na Juliuszu (kop_id 3) i na Suszcu (kop_id 7). OZS-owi się to nie podobało. Postanowiliśmy zmienić numer polecenia, dodając na 4 miejscu w numeracji liczbę 4 i powstał numer 1913700009. Generalnie serwisowo zmieniliśmy numer polecenia w sek_polfk,  ora_cb_pf (w srs), ora_cb_pw (w srs) i ora_bc_ks_spe ( w srs tablica, z której zaczytuje system polecenia do kontenera). Zmieniono serwisowo polfk_status polecenia w sek_polfk z 3 na 2. Wówczas w widoku w sek-u sek_v_cb_pf, pojawił się wpis, a replikacja powinna go obsłużyć.  Generalnie, jak OSZ coś u siebie pogrzebie, to replikacja powinna zaczytać wskazany zapis, ale tak się niestety nie stało w tym przypadku. Normalnie zapis znika z widoku i zmienia status polecenia z 2 (O) na 3 (O*).  W związku z powyższym, podstawowe nasze działanie, tylko ze zmianą statusu na 2 ( status O) nie odniosły skutku (kontakt ze serwisem FOZS) i musieliśmy jeszcze raz cofnąć polecenia do SRS i wysłać do FOZS.   Czyli tak:  - (SRS adm) usunięto wpis w ora_cb_pf, ora_cb_pw (może nie trzeba ale dla pewności zrobiono) i w ora_bc_ks_spe ( tu konieczne działanie) - (SRS adm) w ora_bc_ks znaleziono kontener ( jego id był np w kolumnie spozaro w tablicy ora_cb_pf) i wartość brutta polecenia: polfk_razem, odjęto z wartości w kolumnie wartosc_pol i dodano do wartości w wartosc_rez - (SEK adm) zmieniono polfk_status polecenia na 1 - w SRS-ie z programu, użytkownik wykonał obowiązkowo Akcepuj na funkcji: Akceptacja dla FOZS ( zmienił się status na 2, potem na 3, powstały ponownie wpisy w tablicach srs, kontener się przeliczył)  - użytkownik sprawdził, czy w FOZS jest OK i było",
+      "create_at": "07.03.2025, 07:19:51",
+      "id": 5
+    },
+    {
+      "title": " brak możliwości wyceny poleceń",
+      "content": "Jeżeli nie można wycenić jakichś poleceń to wejść Kalkulacja wartościowa>Wycena i wybrać niewycenione polecenie.  Po wyborze Edytuj próbować pobrać cenę. Może się pojawić się komunikat informujący o niemożności wyboru ceny z powodu brakujących parametrów w próbie skojarzonej z danym poleceniem.",
+      "create_at": "07.03.2025, 07:20:42",
+      "id": 6
+    },
+    {
+      "title": " przedłużanie ważności kontenera",
+      "content": "WYKONUJEMY TYLKO NA POLECENIE PANI BOŻENY GRZEGORZAK  SRS - przedłużenie ważności kontenera  Tablica ORA_BC_KS zmienić status z 6 na 1 Tablica BC_KS_DAT zidentyfikować kontener po id_kontenera i zmienić pole data_do   Najpierw  sprawdzenie daty obowiązywania tej umowy i części, bo na takie zabezpieczenie jest ten kontener: Z/W/126099/702304481/1/_",
+      "create_at": "07.03.2025, 07:23:41",
+      "id": 8
+    },
+    {
+      "title": "wprowadzanie PCP do korekty",
+      "content": "DECLARE  A_KORFK_ID NUMBER; BEGIN  A_KORFK_ID := <TU_WSTAWIAMY_KORFK_ID>;  SERWIS_PC_DLA_KORFK(  A_KORFK_ID => A_KORFK_ID  );  COMMIT; END;",
+      "create_at": "07.03.2025, 07:25:17",
+      "id": 9
+    },
+    {
+      "title": "zakładka RDJ - niepasujące wydobycie DAP",
+      "content": "Jeżeli jest robiona wysyłka DAP to w dobie wysyłki nie wchodzi ona do sprzedaży ale wchodzi do wydobycia. Jeżeli chcemy by wydobycie było prawidłowe w tej dobie należy zdjąć ze zwałów w SEK tonaż tej wysyłki. Jeśli tego nie zrobimy, to narastająco (w dobie, do której zaliczamy sprzedaż- czyli potwierdzamy dostarczeni wysyłki) zwały i wydobycie będą niezgodne o ten tonaż. Przykładowe przeglądanie poleceń dla DAP. Pozycja 1 – wysyłka węgla w dniu 23.08.2024 (data kwalifikacji), sprzedaż będzie zaliczona dopiero po potwierdzeniu dokumentów.  Potwierdzenie wykonywane jest w SRS> Kalkulacja wartościowa>Potwierdzenie odbioru. Pozycja 2 - wysyłka węgla w dniu 20.08.2024 (data kwalifikacji), zaliczona do sprzedaży w dniu 22.08.2024 (na podstawie Potwierdzenia odbioru jak wyżej). Fakturowana w danej dobie.",
+      "create_at": "07.03.2025, 07:27:20",
+      "id": 10
+    },
+    {
+      "title": " wycofanie polecenia fakturowania",
+      "content": "Aby zmienić status polecenia fakturowania należy w tablicy SEK_POLFK zmienić wartość w polu POLFK_STATUS (NIE POLFK_IFX_STATUS) NA WYMAGANĄ.  Statusy znajdują się w tabeli SEK_POLF_STATUS",
+      "create_at": "07.03.2025, 07:28:18",
+      "id": 11
+    },
+    {
+      "title": "zmiana statusu polecenia fakturowania",
+      "content": "Aby zmienić status polecenia fakturowania należy w tablicy SEK_POLFK zmienić wartość w polu POLFK_STATUS (NIE POLFK_IFX_STATUS) NA WYMAGANĄ.  Statusy znajdują się w tabeli SEK_POLF_STATUS",
+      "create_at": "07.03.2025, 07:29:56",
+      "id": 12
+    },
+    {
+      "title": "zmiana danych na poleceniu fakturowania",
+      "content": "Sprawdzić w SCM czy pierwsze zlecenie inaczej korekta Zaleźć nr zlecenie przez SCM  W tabeli SEK_POLFK zmienić SEK_PREF i SEK_POLFKNR (NIEKONIECZNIE) i POLF_WYST_ID  W TABELI SCM_WYST SZUKAMY KODU PO POLU WYST_KODN ODPOWIEDNIEGO KODU I SPISUJEMY KOD W TABELI SCM_ZLEC ZMIENIĆ POLE ZLEC_WYST_ID",
+      "create_at": "13.03.2025, 11:10:29",
+      "id": 14
+    },
+    {
+      "title": "tabela z danymi specyfikacji samochodowe",
+      "content": "Dane znajdują się w tabeli SEK_SAMZLEC",
+      "create_at": "13.03.2025, 11:11:41",
+      "id": 15
+    },
+    {
+      "title": "tabela z danymi specyfikacji samochodowe",
+      "content": "Dane znajdują się w tabeli SEK_SAMZLEC",
+      "create_at": "13.03.2025, 11:11:41",
+      "id": 15
+    },
+    {
+      "title": " KOREKTA ZAMÓWIENIA",
+      "content": "W module SRS system przewiduje zrobienie korekty dla klienta. proszę ją wykonać w funkcji: Zamówienia internetowe-=>Przeglądanie->Korekty->Nowy. Serwis nie zajmuje się robieniem korekt.",
+      "create_at": "13.03.2025, 11:12:33",
+      "id": 16
+    },
+    {
+      "title": "brak ceny w poleceniu fakturowania",
+      "content": " Nie pobrało ceny.Cena powinna wynosić 1056,91. Nr. polecenia: 2464601583 Nr. zlecenia: 2642179 (Karolinka 25,88 t)  SPRAWDZIĆ CZY GRUPY CEN W ZLECENIU I W POLECENIU SĄ TAKIE SAME!  Ktoś zmienił grupę cen w zleceniu w SCM, po utworzeniu polecenia fakturowania (nr dali w zgłoszeniu). Jak chcieli to zrobić to powinni podmienić grupę cen przed utworzeniem polecenia a nie po. Podmieniliśmy grupę cen w poleceniu w SEK_POLFK i tyle z działań",
+      "create_at": "13.03.2025, 11:13:41",
+      "id": 17
+    },
+    {
+      "title": "ZMIANA DATY NA POLECENIACH FAKTUROWANIA",
+      "content": "DATĘ ZMIANIAMY W TABELI SEK_POLF  SELECT *  FROM SEK_POLFK WHERE polfk_kop_id=21 and to_char(trunc(polfk_data),'YYYY/MM/DD')='2024/06/28';    UPDATE SEK_POLFK SET POLFK_DATFK = TO_DATE('24/06/28 00:00:00', 'YY/MM/DD HH24:MI:SS') WHERE POLFK_KOP_ID = 21 AND TO_CHAR(TRUNC(POLFK_DATA), 'YYYY/MM/DD') = '2024/06/28';",
+      "create_at": "18.03.2025, 13:56:09",
+      "id": 18
+    },
+    {
+      "title": " tabela z danymi specyfikacji samochodowej",
+      "content": "Dane znajdują się w tabeli SEK_SAMZLEC",
+      "create_at": "18.03.2025, 13:56:56",
+      "id": 19
+    },
+    {
+      "title": "brak ceny w poleceniu fakturowania",
+      "content": "PGG/91499  Opis: Nie pobrało ceny.Cena powinna wynosić 1056,91. Nr. polecenia: 2464601583 Nr. zlecenia: 2642179 (Karolinka 25,88 t)  SPRAWDZIĆ CZY GRUPY CEN W ZLECENIU I W POLECENIU SĄ TAKIE SAME!  Ktoś zmienił grupę cen w zleceniu w SCM, po utworzeniu polecenia fakturowania (nr dali w zgłoszeniu). Jak chcieli to zrobić to powinni podmienić grupę cen przed utworzeniem polecenia a nie po. Podmieniliśmy grupę cen w poleceniu w SEK_POLFK i tyle z działań",
+      "create_at": "18.03.2025, 14:00:38",
+      "id": 20
+    },
+    {
+      "title": "SRS - wycofanie odrzucenia zamówienia przez KDW",
+      "content": "Można to zrobić w SRS",
+      "create_at": "18.03.2025, 14:01:17",
+      "id": 21
+    },
+    {
+      "title": "sprawdzanie błędów",
+      "content": "Tabela SRS_ZAM_ISKLEP ZNALEŚĆ IDENTYFIKATOR W POLU ZAMI_SKLEP_ID  Tabela SRS_ISKLEP_OPERACJA-BLAD  with zamowienie as (select zami_id from srs_zam_isklep where zami_sklep_id = 1315283) select *   from ( select *    from srs_zam_isklep_operacja   where zamio_zami_id = (select zami_id from zamowienie) union all select *    from srs_zam_isklep_operacja_blad   where zamio_zami_id = (select zami_id from zamowienie)  ) order by zamio_id desc;",
+      "create_at": "18.03.2025, 14:02:23",
+      "id": 22
+    },
+    {
+      "title": "Błędnie zamknięta doba",
+      "content": "PGG/88681 ZGŁOSZENIE: Błędnie zamknięta doba ekspedycyjna.  Data fakturowania 08.01 a doba jest zamknięcie 05.01    NIE PODEJMUJEMY TAKICH ZELCEŃ. Chyba, że przez pomyłkę otworzyli nie tą dobę co trzeba.  ROZWIĄZANIE: SEK_DAT_KOP w polu datakop_data zmienić datę na wymaganą SRS_RDJ_NAGLOWEK zmienić date w polu DATA i usunąć datę nieprawidłową",
+      "create_at": "18.03.2025, 14:03:18",
+      "id": 23
+    },
+    {
+      "title": "nieprawidłowy stan raportu",
+      "content": "Na zwale własnym o nazwie: Jankowice (044100/cc 29/100/06) dnia 06.03.2024 roku zarejestrowano : Ruch zwałów (bez wpływu na wydobycie).  Wszystkie kopalnie PGG, po zarejestrowaniu przyjęcia na zwale obcym, rejestrują normalny: Ruch zwałów.  Proszę poprzez funkcję: Ruchy archiwalne w wymienionym dniu usunąć zarejestrowany, Ruch zwałów (bez wpływu na wydobycie) i wprowadzić tonaż 1410,320 w typie operacji: Ruch zwałów.",
+      "create_at": "18.03.2025, 14:04:02",
+      "id": 24
+    },
+    {
+      "title": "zerowanie WZ przy wykupie ze składu",
+      "content": "Korekta wykupu ze składu nie aktualizuje stanu magazynowego Szukamy w tablicy SEK_SKLAD w polu DOK_NUMER (tu podajemy nr WZ-tki) potem w tablicy SEK_SKLAD_POZ w polu POZ_DOK_ID wstawiamy wartość z pola SKLAD_DOK_ID z tabeli SEK_SKLAD  SEK_SKLAD i SEK_SKLAD_POZ wstawiamy 0",
+      "create_at": "18.03.2025, 14:04:39",
+      "id": 25
+    },
+    {
+      "title": "SRS -brak możliwości wyceny brak checkboxa",
+      "content": "Sprawdzić czy w próbie są parametry",
+      "create_at": "18.03.2025, 14:05:09",
+      "id": 26
+    },
+    {
+      "title": "nie można zrobić wyceny zleceń ",
+      "content": "Temat: Nie można zrobić wyceny dla zleceń: 1211292 oraz 1211293.Brak ikonki do wyceny.   „Zgłoszenie nie zostało zakwalifikowane jako incydent”.  Kopalnie, są zobowiązane do zmiany grupy cen w zleceniach tworzonych z automatu na wysyłkę na skład dla KDW w roku 2024 na właściwą, przed dokonaniem wysyłki. Należy to uczynić bezzwłocznie, by kolejne polecenia mogły pobrać cenę z właściwego cennika. Obecnie grupa cen 1051 na 2024 rok nie posiada cenników. Kto nie wykonał powyższej zmiany, będzie wyceniać polecenia ręcznie, poprzez edycję wyceny. Sprawa uzgodniona z centralą PGG w osobie pani Bożeny Grzegorzak.  Serwis w drodze wyjątku (jednorazowo) wykonał powyższe zmiany, bo kopalnia jak widzi jest prawdopodobnie niedoinformowana.",
+      "create_at": "18.03.2025, 14:05:39",
+      "id": 27
+    },
+    {
+      "title": "SRS - Zmiana  pkt odbioru węgla",
+      "content": "należy w SRSADM uruchomić 2 poniższe update, każdy powinien zmienić 1 wiersz.  update srs_zam_isklep set zami_pdm_kdw=73256   where zami_sklep_id=879716 and zami_pdm_kdw=73314 and zami_status=31;  update isklep_zamowienia set pdm_kdw=73256 where sklep_id=879716 and pdm_kdw=73314;",
+      "create_at": "18.03.2025, 14:06:50",
+      "id": 28
+    },
+    {
+      "title": "Symbole faktur",
+      "content": "CDI - ZAMÓWIENIE INTERNETOWE (DOWÓD DOSTAWY) odbiór własny lub kurier WSF - ZAMÓWIENIE GOTÓWKOWE (FAKTURA)",
+      "create_at": "18.03.2025, 14:07:33",
+      "id": 29
+    },
+    {
+      "title": "G09.1 brak klasyfikatora",
+      "content": "Problem:  SRS Opis: G09.1 nie zgadzają się ilości na produkcji węgla i na sprzedaży - różnica 45,80  Solucja:  Proszę w zleceniach 4211046, 4211139, 4211194 uzupełnić klasyfikator odbiorcy, gdyż jest nieokreślony. Po uzupełnieniu należy jeszcze raz utworzyć sprawozdanie g091.",
+      "create_at": "18.03.2025, 14:08:32",
+      "id": 30
+    },
+    {
+      "title": "G09.1 niezgodne wydobycie",
+      "content": "SELECT DISTINCT polfk_zlec_id, polfk_zlec_nr, polfk_odb_id, polfk_tonaz, polfk_kop_id  FROM sek_polfk, scm_zlec  WHERE polfk_datkw BETWEEN '2024/11/01' AND '2024/12/03'  AND polfk_zlec_id in ( select zlec_id from scm_zlec where zlec_klfzl_ido='133' and zlec_rok=2024 and zlec_frmplat_id=22) ORDER BY polfk_kop_id;  sprawdzić klasyfikator odbiorcy",
+      "create_at": "18.03.2025, 14:09:05",
+      "id": 31
+    },
+    {
+      "title": "Problem z wyceną",
+      "content": "Polecenia wysyłki na skład znajdujemy to polecenie w tablicy SEK_POLFK po nr zlecenia   Za pomocą poniższego selecta znajdujemy polecenia wysyłki na skład z niewłaściwą grupą cen - 1051 (POLFK_GRCEN_ID = 26786) select * from sek_polfk where polfk_grcen_id=26786 and polfk_rok=2024 and polfk_wyst_id=188 and polfk_typdok=5  Jeżeli takie występują to zamieniamy polfk_grcen_id na prawidłowe dla danej kopalni (wg screena z katalogu)  Trzeba też sprawdzić czy w zleceniu jest prawidłowa grupa cen ",
+      "create_at": "18.03.2025, 14:09:37",
+      "id": 32
+    }
+  ],
+  "scm": [
+    {
+      "title": "JSW zmiana obowiązywania grup cen",
+      "content": "ROBIMY TYLKO NA JSW  W tabeli SCM_GRCEN po GRCEN_KODN szukamy GRCEN_ID i wklejamy w tabeli SCM_CENNIK do pola CENNIK_GRCEN_ID i zamykamy stary cennik dzień wcześniej przed otwarciem nowego, robimy t w polach CENNIK_DATA_OD I CENNIK_DATA_DO. Potem kopiujemy wartość z pola CENNIK_ID z tabeli SCM_CENNIK i przechodzimy do tabeli SCM_CENA tam skopiowaną wartość (OBYDWU) cenników wklejamy w pole CENA_CENNIK_ID, również zmieniamy obie daty, zgodnie z treścią zlecenia  Sprawdzamy w aplikacji SCM Cenniki -> Ceny szukać po ID",
+      "create_at": "07.03.2025, 07:31:50",
+      "id": 4
+    },
+    {
+      "title": "ustawianie statusu zamówienia",
+      "content": "Aby zmienić status zlecenia należy w tabeli SCM_ZLEC po polu zlec_nr i zlec_rok znaleść konkretne zlecenie i w polu zlec_status na wymagany: -1 - zlecenie nieobsłużone  1 - zlecenie niedostępne  0 - zlecenie dostępne  -11 - Nowe zlecenie dodane do zamówienia (historyczne)  Statusy znajdują się w tabeli SCM_DICTATR (posortować po typie - malejąco)",
+      "create_at": "07.03.2025, 07:33:06",
+      "id": 5
+    },
+    {
+      "title": "tabela dla deputatów",
+      "content": "SCM_CENA_DEP_SB",
+      "create_at": "07.03.2025, 07:35:13",
+      "id": 6
+    },
+    {
+      "title": "Serwisowe zamykanie zleceń",
+      "content": " Poniższym selectem sprawdzamy ile zleceń na węgiel (zlec_tprod=2) jest aktwynych w zadanym roku:  SELECTcount(*)  FROM scm_zlec  WHERE zlec_rok=2023 and zlec_tprod=2 and zlec_status=1  Wykonujemy update danych przestawiajac pole zlec_status na 0 (nieaktywny)  UPDATEscm_zlec SET zlec_status=0 WHERE zlec_rok=2024 and zlec_tprod=2 and zlec_status=1   UPDDATE scm_zlec SET zlec_status=0 WHERE zlec_nr=6001027 and zlec_rok=2024 and zlec_status=1",
+      "create_at": "19.03.2025, 13:46:19",
+      "id": 7
+    },
+    {
+      "title": "Tabele do sortymentów",
+      "content": "MDM_KONF MDM_PRODSW MDM_NAZWH",
+      "create_at": "19.03.2025, 13:47:34",
+      "id": 8
+    },
+    {
+      "title": "zmiana klasy w dokumencie",
+      "content": "Przypadek występuje gdy były zmiany klasy na etapie realizacji.  Wyszukać zlecenie o prawidłowym nr polecenia (ta sama klasa)  W  SQLDEV w tablicy SEK_POLFK po polu POLFK_NR szukamy prawidłowego i nieprawidłowego polecenia) i w polu POLFK_KLASA wpisać prawidłową klasę (ze zlecenia)",
+      "create_at": "19.03.2025, 13:48:31",
+      "id": 9
+    },
+    {
+      "title": "ustawianie statusu zamówienia",
+      "content": "Aby zmienić status zlecenia należy w tabeli SCM_ZLEC po polu zlec_nr i zlec_rok znaleść konkretne zlecenie i w polu zlec_status na wymagany: -1 - zlecenie nieobsłużone  1 - zlecenie niedostępne  0 - zlecenie dostępne  -11 - Nowe zlecenie dodane do zamówienia (historyczne)  Statusy znajdują się w tabeli SCM_DICTATR (posortować po typie - malejąco)",
+      "create_at": "19.03.2025, 13:50:02",
+      "id": 11
+    },
+    {
+      "title": "otwarcie zamkniętego kontenera",
+      "content": "W SRS tablicy ORA_BC_KS szukamy po nr umowy i zmieniamy pole status z 6 na 1 ORA_BC_KS_DAT POPRAWIAMY DATY   JEŻELI SPRAWA DOTYCZY PRZEŁUŻENIA ODBIORU AUKCJI TO NAJPIERW KOPANIA MUSI PRZEDŁUŻYĆ TERMIN ODBIORU (SPRAWDZIĆ CZY UMOWA  JEST PRZEDŁUŻONA) A POTEM ZROBIĆ NOWE ZAMÓWIENIE I PRZETWORZYĆ W ZLECENIE , WTEDY KONTENER OTWORZYĆ KONTENER SERWISOWO  AUKCJĘ sprawdzić w SOK -> Sprzedaż kierunkowa -> Obsługa aukcji po polu \"Sygnatura pozycji aukcji\" (przykład AUK-SW/2024/2578/10)  ZAMÓWIENIE sprawdzić w SOK -> Zamówienia -> Przeglądanie zamówień",
+      "create_at": "19.03.2025, 13:50:38",
+      "id": 12
+    },
+    {
+      "title": "KONTENERY ZMIANA WARTOŚCI",
+      "content": "SCHEMAT SRS  TABLICA ORA_BC_ZW (WYSZUKAC PO POLU ID_KONTA, KTÓRY MOŻEMY ZNALEŚĆ W TABELI ORA_BS_KS) POPRAWIAMY POLE WARTOŚĆ NA PLUS LUB NA MINUS W SKOPIOWANYM REKORDZIE POPRAWIAMY TEŻ DATĘ I OPIS NR DOKUMENTU  TYPY OPERACJI 3 - PRZEDPŁATY, 1 - ZALICZKI POLECENIA ZNAJDUJĄ SIĘ W TABLICY 0RA_BC_KSP",
+      "create_at": "19.03.2025, 13:51:12",
+      "id": 13
+    },
+    {
+      "title": "dodawanie nowego przewoźnika",
+      "content": "Jeżeli problemy z przewoźnikiem sprawdzić czy w przewoźnikach w SCM ma wypełniony numer knt (Kartoteki ogólne> Kartoteki przewozników). Jeżeli ma a w SOP przewoźnik na czerwono to sprawdzić czy w SOP_V_PRZEWOZNIK_PARAM pole PARAM_BRAK=0. Jeżeli nie 0 uzupełnić SOP_PARAM_PRZEWOZNIK na podstawie innych przewoźników (ok.8 parametrów) (zwracać uwagę na DATA_DO czy jest właściwa nie np. 1999/12/31 !) Jeżeli niewłaściwa to poprawić update np.: UPDATE  sop_parametr_przewoznik  SET  data_do=to_date('2999.12.31','yyyy.mm.dd')  WHERE  przewoznik_id=784   PRZEWOZNIK_ID NALEŻY ZNALEŹĆ W TABELI SCM_PRZEW  Odnośnie PGG/96043 dla przewoźnika samochodowego nie trzeba wprowadzać 8 parametrów jak dla kolejowego. Należy mu tylko założyć użytkownika i  nadać uprawnienia dla portalu SPP (robi to Grzesiu Sładek)",
+      "create_at": "19.03.2025, 13:51:45",
+      "id": 14
+    },
+    {
+      "title": "zmiana statusów deklaracji akcyzowych",
+      "content": "Problem: Prośba o zmianę statusu oświadczeń akcyzowych na anulowany:   FWKDZF/70/733/24/30604 FWKDZF/70/733/24/3295 1FWKDZF/70/733/24/33356 FWKDZF/70/733/24/40153  Należy w tabeli SCM_OSWIADCZENIE zmienić pole  STATUS z WYST na ANUL konkretne oświadczenie należy znaleść po polu NUMER , np. NUMER='FWKDZF/70/733/24/30604'  Skopiuj kolumny z excela i przerób je w ChatGPT  Wstaw apostrof na początku i końcu każdej linii tekstu oraz przecinek na końcu każdej linii tekstu, przecinka nie stawiaj na końcu ostatniej linii tekstu  PRZYKŁADOWY KOD:  SELECT * FROM scm_oswiadczenie WHERE NUMER in (  );   UPDATE scm_oswiadczenie SET STATUS ='ANUL' WHERE NUMER in (  )  COMMIT;  Aby zmienić status oświadczenia akcyzowego (Jeżeli niemożliwe z poziomu formatki Kartoteki ogólne -> Oświadczenia akcyzowe -> Kartoteka oświadzczeń akcyzowych np. blokada statusu z OZS) należy w tabeli SCM_OSWIADCZENIE w polu STATUS wstawić odpowiedni kod, np. DONA dla statusu \"Do naliczenia akcyzy\" czy POTW dla stausu \"potwierdzone\".  WYST\tWystawione WYSL\tWysłane POTW\tPotwierdzone ANUL\tAnulowane DONA\tDo naliczenia akcyzy PONA\tPo naliczeniu akcyzy",
+      "create_at": "19.03.2025, 13:52:35",
+      "id": 15
+    },
+    {
+      "title": " zmiana wystawcy na zleceniu",
+      "content": "ZLECENIE NIE MOŻE BYĆ W STATUSIE OZS - najpierw sprawdzić zlecenie w SCM (program zakładka realizacja)   Kody wystawców znajdują się w tabeli SCM_WYST i bierzemy WYST_ID, PANIE NAJCZĘŚCIEJ POSŁUGUJĄ SIĘ NUMERACJĄ Z POLA WYST_KODN  W tabeli SCM_ZLEC pole ZLEC_WYST_ID wstawiamy WYST_ID z tabeli SCM_WYST   W tabeli SEK_POLFK pole POLFK_WYST_ID wstawiamy ten sam nr z WYST_ID Zmieniam profix w POLFK_PREF (w tabeli SEK_POLFK)  PREFIX bierzemy z programu SCM -> Zlecenia -> Kartoteki zleceń -> Wystawcy Numeracja - numeracja dokumentów  NOWE ZLECENIE I ZAMÓWIENIE",
+      "create_at": "19.03.2025, 13:53:28",
+      "id": 16
+    },
+    {
+      "title": "przekroczenie kontenera",
+      "content": "Problem:   Przekroczenie na kontenerze z tytułu zmniejszenia wartosci zabezpieczenia. Kontrhent: CKK164767. Kontener P/W/164767/702406221/1/49 oraz P/W/164767/702403417/1/_  Rozwiązanie: Pytanie należy skierować do obsługi systemu CR, gdyż wartość zabezpieczenia została skorygowana dokumentami z dnia 27.09.2024 roku, zgodnie z podanym komunikatem : PP/70/2024/205008 ( 4 x (-2028,80 zl)) i PP/70/2024/205009 (4 x (-7467,94 zł), co poskutkowało przekroczeniem kontenera.  W module SCM prezentuje to funkcja: Spec. wartościowa zabezp. w Kartoteki => Zabezpieczenia umów dla wskazanych kontenerów.",
+      "create_at": "19.03.2025, 13:53:52",
+      "id": 17
+    },
+    {
+      "title": "zmiana waluty w cenniku",
+      "content": "Zmienia się w tablicy SCM_GRCEN ale i tak trzeba dokładnie sprawdzić od kiedy taka grupa cen czy ma cennik jak tak to jakie są ceny, po sprawdzeniu wyszło że może zmienić, jest jeszcze ryzyko że ktoś w międzyczasie robił wycenę na podstawie tego cennika ale to już odpowiedzialność zgłaszającej",
+      "create_at": "19.03.2025, 13:54:17",
+      "id": 18
+    },
+    {
+      "title": " ZMIANA KLASY W ZLECENIU I ZAMÓWIENIU",
+      "content": "ZMIAN DOKONUJEMY W TABLICACH SCM_ZLEC, SOK_ZAMOWIENIA I SOK_ZAMOWIENIA_POZ WPISUJEMY PRAWIDŁOWE ID W POLACH ZAMP_KLASA_ID I ZAMP_KLASASORT_ID",
+      "create_at": "19.03.2025, 13:54:41",
+      "id": 19
+    },
+    {
+      "title": " zmiana grupy cen w zleceniu i poleceniu fakturowania",
+      "content": "KONIECZNIE SPRAWDZIĆ CZY ZLECENIA MA POLECENIE FAKTUROWANIA W STATUSIE P  Aby zmienić grupę cen w zleceniu należy w tabeli SCM_GRCEN znaleźć po polu GRCEN_KODN znaleźć GRCEN_ID i w tabeli ZLEC_GRCEN_ID wstawić prawidłową wartość.  Aby zmienić grupę cen w poleceniu fakturowania należy w tabeli SEK_POLFK wyszukać konkretne polecenie po polu POLFK_NR i w polu POLFK_GRCEN_ID wstawić kod prawidłowej grupy cen (pobranej z tabeli SCM_GRCEN)",
+      "create_at": "19.03.2025, 13:55:04",
+      "id": 20
+    },
+    {
+      "title": "zmiana typu zlecenia",
+      "content": "ZMIANY DOKONUJEMY W TABELI SCM_ZLEC WYMIENIAMY WARTOŚĆ W POLU ZLEC_TYPZLEC_ID MOŻEMY ZNALEŚĆ ODPOWIEDNIE ID W TABELI SCM_TYPZLEC",
+      "create_at": "19.03.2025, 13:55:30",
+      "id": 21
+    },
+    {
+      "title": " zmiana daty obowiązywania ceny",
+      "content": "0W tabeli SCM_GRCEN znaleźć po polu GRCEN_KODN -> GRCEN_ID NASTĘPNIE W TABELI SCM_CENNIK PO POLU CENNIK_GRCEN_ID ZNALEŚĆ CENNIK_ID POTEM W TABELACH SCM_CENNIK I SCM_CENA PO POLU CENA_CENNIK_ID ZNALEŚĆ KONKRETNY REKORD ALBO REKORDY I W POLACH CENA_DATA_OD LUB CENA_DATA_DO WSTAWIC ODPOWIEDNIĄ WARTOŚĆ  JEŻELI SĄ INNE CENNIKI KONIECZNIE ZAMKNĄĆ DATĘ POPRZEDNIEGO KWARTAŁU",
+      "create_at": "19.03.2025, 13:56:05",
+      "id": 22
+    },
+    {
+      "title": "odblokowywanie zleceń",
+      "content": "Zlecenia odblokowujemy z poziomu SOK Zamówienia -> Przeglądanie zamówień -> Wyszukujemy konkretne zamówienie i klikamy przycisk ODBLOKUJ",
+      "create_at": "19.03.2025, 13:57:06",
+      "id": 23
+    },
+    {
+      "title": " zmiana statusów oświadczeń akcyzowych",
+      "content": "Problem: Prośba o zmianę statusu oświadczeń akcyzowych na anulowany:   FWKDZF/70/733/24/30604 FWKDZF/70/733/24/3295 1FWKDZF/70/733/24/33356 FWKDZF/70/733/24/40153  Należy w tabeli SCM_OSWIADCZENIE zmienić pole  STATUS z WYST na ANUL konkretne oświadczenie należy znaleźć po polu NUMER , np. NUMER='FWKDZF/70/733/24/30604'    PRZYKŁADOWY KOD:  UPDATE scm_oswiadczenie SET STATUS ='ANUL' WHERE NUMER in ('CDI/64/500/22641958137', 'CDI/64/500/22641958136', 'CDI/64/500/22641958135', 'CDI/64/500/22641958134', 'CDI/64/500/22641958132', 'CDI/64/500/22641958131', 'CDI/64/500/22641958128', 'CDI/64/500/22641958122', 'CDI/64/500/22641958116', 'CDI/64/500/22641958112', 'CDI/64/500/22641958111', 'CDI/64/500/22641958110', 'CDI/64/500/22641958109', 'CDI/64/500/22641958107', 'CDI/64/500/22641958106', 'CDI/64/500/22641958105', 'CDI/64/500/22641958101', 'CDI/64/500/22641958099', 'CDI/64/500/22641957742')  Aby zmienić status oświadczenia akcyzowego (Jeżeli niemożliwe z poziomu formatki Kartoteki ogólne -> Oświadczenia akcyzowe -> Kartoteka oświadzczeń akcyzowych np. blokada statusu z OZS) należy w tabeli SCM_OSWIADCZENIE w polu STATUS wstawić odpowiedni kod, np. DONA dla statusu \"Do naliczenia akcyzy\" czy POTW dla stausu \"potwierdzone\".  WYST\tWystawione WYSL\tWysłane POTW\tPotwierdzone ANUL\tAnulowane DONA\tDo naliczenia akcyzy PONA\tPo naliczeniu akcyzy",
+      "create_at": "19.03.2025, 13:57:36",
+      "id": 24
+    },
+    {
+      "title": "brak możliwości dokonania przedpłaty ",
+      "content": "44144 - export wdt (FRM - firma) przedpłata (bez zmian), brak blokady ponad 15 000 zł i blokada split zlecenie: 6142001  umowa LRU: 702400025 cz.1 zab.: P/W/44144/702400025/1/43 OK  Robili to na funkcji Przedpłaty - powyżej 15.000, tam jest blokada, bo dla eksportu nie ma faktur zaliczkowych i split payment  „Zgłoszenie nie zostało zakwalifikowane jako incydent”.  Wyjaśniono z użytkownikiem, iż pomimo nowej nazwy funkcji ( na życzenie PGG):  Kody przedpłat - do 15.000, kody przedpłaty dla kontrahentów zagranicznych wykonujemy w tym miejscu, tak jak było zawsze. Druga funkcja, po zmianie nazwy (życzenie PGG) na Kody przedpłat - powyżej 15.000, obejmuje wystawianie wniosku o fakturę zaliczkową w trybie split payment i tam nie wykonujemy przedpłat dla kontrahenta zagranicznego, tak jak było zawsze. Komunikat jest prawidłowy, gdyż kontrahent zagraniczny nie ma kontenera zaliczkowego tylko przedpłatowy. Użytkownik wykonał kod przedpłaty we właściwym miejscu.",
+      "create_at": "19.03.2025, 13:58:28",
+      "id": 25
+    },
+    {
+      "title": "usuwanie cennika",
+      "content": "Po wyzerowaniu cen cennika zatwierdzony przyszły można usunąć, niestety nie działa to na cenniki dla sklepu internetowego blokada jest celowa,  nie ma tej informacji w instrukcji, do teraz też o tym nie wie wiedziałam, trzeba sobie zakodować",
+      "create_at": "19.03.2025, 13:59:04",
+      "id": 26
+    },
+    {
+      "title": "zabezpieczenia majątkowe polecenia dokumentów brak informacji o tonażu ",
+      "content": "Kolumna tonaż została dodana przy okazji realizacji RFC dot. depozytu niewłaściwego, dla takiego rodzaju zabezpieczenia na formatce \"Podgląd realizacji zabezpieczeń\" prezentowane będą kolumny z tonażową kontrolą zabezpieczenia z możliwością przejścia na podgląd wartościowy. Natomiast w funkcjach „Podgląd rezerwacji”, „Polecenia dokumentów”, „Spec. Wartościowa zabezp.” dodano kolumnę tonaż, bez względu na charakter zabezpieczenia, jednak tonaż jest wypełniany tylko dla depozytu nieprawidłowego. Informacja taka jest zawarta również w instrukcji dot. depozytu nieprawidłowego.",
+      "create_at": "19.03.2025, 13:59:35",
+      "id": 27
+    },
+    {
+      "title": "dodawanie nowych cen do SDR",
+      "content": "SCM -> Cenniki - > Grupy cen węgla -> Nowy -> Cenniki -> Zestawienie cenników -> Nowy potem Ceny (macierze dodać) Potem dodać w Samochody ->  towary na samochody",
+      "create_at": "19.03.2025, 14:00:17",
+      "id": 28
+    },
+    {
+      "title": "ZMIANA STAWKI VAT",
+      "content": "UPDATE SCM_GRCEN SET GRCEN_VAT_ID = 163 WHERE GRCEN_KODN IN (4701,4702, 4703, 4704, 4705,4706, 4707, 4708,4709, 4710, 4711, 4712, 9701, 9702, 9703, 9704, 9705, 9706, 9707, 9708, 9709, 9710, 9711, 9712)   Kod 163 - stawka VAT 23%",
+      "create_at": "19.03.2025, 14:00:46",
+      "id": 29
+    },
+    {
+      "title": "zmiana cen netto na brutto",
+      "content": "SELECT * FROM SCM_GRCEN WHERE GRCEN_KODN IN (4701,4702, 4703, 4704, 4705,4706, 4707, 4708,4709, 4710, 4711, 4712, 9701, 9702, 9703, 9704, 9705, 9706, 9707, 9708, 9709, 9710, 9711, 9712)  UPDATE SCM_GRCEN SET GRCEN_CENY = 1 WHERE GRCEN_KODN IN (4701,4702, 4703, 4704, 4705,4706, 4707, 4708,4709, 4710, 4711, 4712, 9701, 9702, 9703, 9704, 9705, 9706, 9707, 9708, 9709, 9710, 9711, 9712) AND GRCEN_CENY=0   Kod gr cen = 1 = to cena brutto Kod gr cen = 0 to cena netto",
+      "create_at": "19.03.2025, 14:01:26",
+      "id": 30
+    },
+    {
+      "title": "cofnięcie zamówienia",
+      "content": "Zgłoszenie nr: SR1027960 Podsumowanie: SZYK2 SCM Opis: Prośba o cofniecie zlecenia numer 1604108 - nieprawidłowa umowa ERU stąd prośba ponieważ osoby z centrali nie mogą z tym nic zrobić. NIC NIE ROBIMY Muszą sobie stworzyć nowe zamówienie i nowe zlecenie ",
+      "create_at": "19.03.2025, 14:03:22",
+      "id": 31
+    },
+    {
+      "title": "KTW - sprzedaż węgla na worki",
+      "content": "W dniu 21.02.2024 ZP „Juliusz” chciał rozpocząć wydawanie na sprzedaży drobnicowej nowego sortymentu o nazwie Brykiet węglowy Ekosort plus worki 20 kg (symbol 043211m0). Utworzono awizację (np. na zlecenie 1330006 na 0,4 t).  Sprzedaży węgla nie udało się zrealizować ponieważ w trakcie rejestracji operacji system podpowiadał że worki maja po 25 kg.  Powyższy komunikat jest związany z faktem, że ZP „Juliusz” (w przeciwieństwie do innych spółek węglowych) zrezygnował z obsługi magazynów węgla i zdecydował się na jeden typ worków (worek 25 kg) i przeważanie ich na wagach najazdowych.  W trakcie wdrożenia oprogramowania zostało to uwzględnione (wymagało szeregu zmian) i obecnie nie ma możliwości realizacji wydawania węgla w innych opakowaniach niż worki 25 kg (oczywiście mogą to być np. worki 20 kg ale dla całej sprzedaży – parametr do ustalenia w module SCM). Jeżeli jest konieczność zróżnicowania worków to KTW powinien wystąpić do COIG z RFC w celu dokonania niezbędnych zmian.  Odnośnie Juliusza i nowych worków 20 kg: ilość kg w workach na KTW jest określona w sdr_kartmag (pole katrmag_kilwor).",
+      "create_at": "19.03.2025, 14:03:45",
+      "id": 32
+    },
+    {
+      "title": "zmiana okresu obowiązywania przeznaczenia węgla",
+      "content": "scm_przezn_wegla zmienić datę obowiązywania",
+      "create_at": "19.03.2025, 14:04:18",
+      "id": 33
+    },
+    {
+      "title": "zmiana daty  obowiązywania zlecenia",
+      "content": "SQL DEV - w TABELI SCM_ZLEC WYEDYTOWAĆ POLE ZLEC_DATA_DO  SZUKAĆ PO POLU ZLEC_NR",
+      "create_at": "19.03.2025, 14:04:58",
+      "id": 34
+    },
+    {
+      "title": "SCM I SEK Zmiana odbiorcy na zleceniu",
+      "content": "Robimy tylko na zleceniu typu 9 (przesunięcia miedzy zakładami)  W innym wypadku zrobić korektę do zera i dofakturowanie na nowe prawidłowe zlecenie  SCM_ZLEC pole ZLEC_PLAC_ID SEK_POLFK pola POLFK_KLODBID POLFK_ADODBID SEK_KOLDOK po nr listu przewozwego z SEK za dany dzień KOLDOK_NR KOLDOK_ODB_ID I KOLDOK_AD_ID TO SAMO CO W POLFK SOK_ZAM_POZ POLE ZAM_ZLEC_ID PO POLU ZAM_ID WCHODZĘ DO TABLICY SOK_ZAM I PO ID DO ZAM_ID WSTAWIAM I PODMIANIAM ZAM_ODBIORCA_ID",
+      "create_at": "19.03.2025, 14:05:28",
+      "id": 35
+    },
+    {
+      "title": "Select do sprawdzenia czy istnieją jakieś polecenia, które powinny mieć cenę z MCR",
+      "content": "Select do sprawdzania czy istnieją jakieś polecenia, które powinny mieć cenę z MCR, może się komuś przyda:  select * from sek_polfk    join scm_zlec on zlec_id = polfk_zlec_id   join scm_typzlec on typzlec_id = zlec_typzlec_id   where polfk_data > to_date('01012024','ddmmyyyy')    and typzlec_czy_sprzedaz=1    and polfk_status>0    and polfk_mcrcn_id is null;",
+      "create_at": "19.03.2025, 14:06:02",
+      "id": 36
+    },
+    {
+      "title": " zmiana na zleceniach w SCM, grup cennikowych dla dostaw w ramach umowy przechowania z KDW. Typ zlecenia  „12-Składy – wydanie (wysyłka)”, wystawca nr 23.",
+      "content": "Zmiana na zleceniach w SCM, grup cennikowych dla dostaw w ramach umowy przechowania z KDW. Typ zlecenia  „12-Składy – wydanie (wysyłka)”, wystawca nr 23.  SCM_ZLEC select count(*), zlec_kop_id, zlec_grcen_id from scm_zlec  where zlec_rok=2024 and zlec_typzlec_id=49 and zlec_wyst_id=188 and zlec_grcen_id=26786 group by zlec_kop_id,zlec_grcen_id order by zlec_kop_id   masz póki co selecta na to co jest obecnie do podmiany wg zgłoszenia ( będziemy zmieniać grupę cen   W tabeli SCM_GRCEN wykonac selecta grcen_kodn in (1051, 1279,1280,1281,1283,1284,1285,1286,1287,1288,1289,1290)  Kod grupy cen znajduje sie w kolumnie GRCEN_KODN  UPDATE SCM_ZLEC SET ZLEC_GRCEN=30426 WHERE _rok=2024 and zlec_typzlec_id=49 and zlec_wyst_id=188 and zlec_grcen_id=26786 AND ZLEC_KOP_ID=8   W nawiązaniu do rozmowy telefonicznej proszę o zmianę na zleceniach w SCM, grup cennikowych dla dostaw w ramach umowy przechowania z KDW. Typ zlecenia : „12-Składy – wydanie (wysyłka)”, wystawca nr 23. Zamiast grupy nr 1051  - powinien być:  KWK Sośnica – 1279 KWK Piast-Ziemowit Ruch Piast – 1280 KWK Piast-Ziemowit Ruch Ziemowit – 1281 KWK RUDA Ruch Halemba – 1282 KWK RUDA Ruch Bielszowice – 1283 KWK ROW Ruch Chwałowice – 1284 KWK ROW Ruch Jankowice – 1285 KWK ROW Ruch Marcel – 1286 KWK ROW Ruch Rydułtowy – 1287 KWK Mysłowice-Wesoła – 1288 KWK Staszic - Wujek Ruch Murcki - Staszic – 1289 KWK Piast-Ziemowit Ruch Ziemowit (Wola ) – 1290  Typ zlecenia znajduje sie w tablicy SCM_TYPZLEC SCM_WYST - typy dostawcy SCM_KOP - kopalnie   select count(*), zlec_kop_id, zlec_grcen_id from scm_zlec where zlec_rok=2024 and zlec_typzlec_id=49 and zlec_wyst_id=188 and zlec_grcen_id=26786 group by zlec_kop_id,zlec_grcen_id order by zlec_kop_id;  update scm_zlec set zlec_grcen_id=30426 where zlec_rok=2024 and zlec_typzlec_id=49 and zlec_wyst_id=188 and zlec_grcen_id=26786 and zlec_kop_id=8; update scm_zlec set zlec_grcen_id=30427 where zlec_rok=2024 and zlec_typzlec_id=49 and zlec_wyst_id=188 and zlec_grcen_id=26786 and zlec_kop_id=12; update scm_zlec set zlec_grcen_id=30428 where zlec_rok=2024 and zlec_typzlec_id=49 and zlec_wyst_id=188 and zlec_grcen_id=26786 and zlec_kop_id=14; update scm_zlec set zlec_grcen_id=30430 where zlec_rok=2024 and zlec_typzlec_id=49 and zlec_wyst_id=188 and zlec_grcen_id=26786 and zlec_kop_id=18; update scm_zlec set zlec_grcen_id=30431 where zlec_rok=2024 and zlec_typzlec_id=49 and zlec_wyst_id=188 and zlec_grcen_id=26786 and zlec_kop_id=20; update scm_zlec set zlec_grcen_id=30432 where zlec_rok=2024 and zlec_typzlec_id=49 and zlec_wyst_id=188 and zlec_grcen_id=26786 and zlec_kop_id=21; update scm_zlec set zlec_grcen_id=30433 where zlec_rok=2024 and zlec_typzlec_id=49 and zlec_wyst_id=188 and zlec_grcen_id=26786 and zlec_kop_id=22; update scm_zlec set zlec_grcen_id=30434 where zlec_rok=2024 and zlec_typzlec_id=49 and zlec_wyst_id=188 and zlec_grcen_id=26786 and zlec_kop_id=23; update scm_zlec set zlec_grcen_id=30435 where zlec_rok=2024 and zlec_typzlec_id=49 and zlec_wyst_id=188 and zlec_grcen_id=26786 and zlec_kop_id=60; update scm_zlec set zlec_grcen_id=30436 where zlec_rok=2024 and zlec_typzlec_id=49 and zlec_wyst_id=188 and zlec_grcen_id=26786 and zlec_kop_id=62; update scm_zlec set zlec_grcen_id=30437 where zlec_rok=2024 and zlec_typzlec_id=49 and zlec_wyst_id=188 and zlec_grcen_id=26786 and zlec_kop_id=64;  Zmiany w POLFK  select * from sek_polfk where polfk_grcen_id=26786 and polfk_rok=2024 and polfk_wyst_id=188 and polfk_typdok=5;  update sek_polfk set polfk_grcen_id=30427 where polfk_grcen_id=26786 and polfk_rok=2024 and polfk_wyst_id=188 and polfk_typdok=5 and polfk_kop_id=12; update sek_polfk set polfk_grcen_id=30428 where polfk_grcen_id=26786 and polfk_rok=2024 and polfk_wyst_id=188 and polfk_typdok=5 and polfk_kop_id=14; update sek_polfk set polfk_grcen_id=30432 where polfk_grcen_id=26786 and polfk_rok=2024 and polfk_wyst_id=188 and polfk_typdok=5 and polfk_kop_id=21; update sek_polfk set polfk_grcen_id=30433 where polfk_grcen_id=26786 and polfk_rok=2024 and polfk_wyst_id=188 and polfk_typdok=5 and polfk_kop_id=22; update sek_polfk set polfk_grcen_id=30434 where polfk_grcen_id=26786 and polfk_rok=2024 and polfk_wyst_id=188 and polfk_typdok=5 and polfk_kop_id=23; update sek_polfk set polfk_grcen_id=30437 where polfk_grcen_id=26786 and polfk_rok=2024 and polfk_wyst_id=188 and polfk_typdok=5 and polfk_kop_id=64;",
+      "create_at": "19.03.2025, 14:06:48",
+      "id": 37
+    },
+    {
+      "title": "zabezpieczenia umów",
+      "content": "Do umowy LRU 021700317 dla 4 części, dla której jest zrobione wymienione zlecenie jest typ zabezpieczenia majątkowy z zabezpieczeniem na poziomie umowy bez tworzenia kontenera, co jest nieakceptowalne przez system KSP/SCM. Jeśli występuje zabezpieczenie na części umowy na wskazanym poziomie to wymagane jest tworzenie kontenera. Można utworzyć nową cześć umowy bez zabezpieczeń i zrobić nowe zamówienie na tą cześć lub spróbować edytować wcześniejszą 4 cześć umowy. Operacje, te jednak wykraczają poza serwis KSP w kwestii znajomości działania modułu LRU w  sprawach co jest dozwolone, a co nie jest dozwolone. Należy zwrócić się do LRU w celu wyjaśnienia zaistniałej sytuacji lub uzyskania stosownej pomocy, gdy będzie takowa wymagana.",
+      "create_at": "19.03.2025, 14:07:42",
+      "id": 38
+    },
+    {
+      "title": "zmiana sortymentu w grupie cenowej",
+      "content": "W tabeli SCM_GRCEN należy znaleźć grupę cen o prawidłowej grupie sortymentowej i podmienić id w polu GRCEN_TWGSG_ID",
+      "create_at": "17.04.2025, 05:54:14",
+      "id": 39
+    }
+  ],
+  "kdw": [
+    {
+      "title": "Nawęglanie KDW",
+      "content": "SEK_SKLAD PO SYGNATURZE ZNALEŚĆ DOKUMENT MMP (ZNALEŹĆ W PORTALU) SKOPIOWAĆ SKLAD_DOK_ID I W TABELI SEK_SKALD_POZ WYSZUKUJEMY I ZMIENIAMY TONAŻ POZ_TONAZ ORAZ W TABELI SEK_SKLAD W POLU DOK_TONAZ",
+      "create_at": "01.04.2025, 10:13:55",
+      "id": 2
+    },
+    {
+      "title": "Jeżeli KDW ma problem z potwierdzeniem MMR to należy sprawdzić czy system nie wygenerował podwójnych dokumentów w tablicach",
+      "content": "SRS -> Zamówienia internetowe -> Przeglądanie -> Po znalezieniu zamówienia skorzystać z przycisku \"Odrzuć odstąpienie\". TYLKO OPIEKUN NA KOPALNI MOZE TO ZROBIĆ",
+      "create_at": "10.04.2025, 11:44:46",
+      "id": 3
+    },
+    {
+      "title": "anulowanie I EDYCJA upoważnienia",
+      "content": "UPOWAZNIEŃ NIE DA SIĘ EDYTOWAĆ ANULUJEMY UPOWAŻNIENIE Z NIEPRAIDŁOWYMI DANYMI I TWORZYMY NOWE",
+      "create_at": "10.04.2025, 11:45:10",
+      "id": 4
+    },
+    {
+      "title": "awizacje dodatkowe",
+      "content": "Ile dni do przodu KDW może zarejestrować wniosek o awizację dodatkową?  Tylko i wyłącznie w bieżącym tygodniu można zarejestrować wniosek - takie złożenia zostały ustalone jeszcze przez Grzesia Kraskę z Jolą Smołką Awizacje dodatkowe, poprzez SOK, można rejestrować max na 14 dni do przodu.",
+      "create_at": "10.04.2025, 11:45:41",
+      "id": 5
+    },
+    {
+      "title": "brak węgla na składzie",
+      "content": "Sprawdzić w module SEK dokument MMR i SRS czy jest ta sama klasa co w zleceniu. Jeżeli na poleceniu klasa jest inna wpisujemy taką samą jak na zleceniu (SYMBOL KLASY) ID klasy klasy możemy znaleźć w tabeli SCM_GRCEN i w tabeli SEK_POLFK zmieniamy symbol grupy cen",
+      "create_at": "10.04.2025, 11:46:07",
+      "id": 6
+    },
+    {
+      "title": "cofnięcie kodu odbioru",
+      "content": "Kod odbioru nie ma nic wspólnego z upoważnieniem. Upoważnienie jest wystawiane przez KDW w portalu spkdw żeby odebrać węgiel z kopalni. Kod odbioru jest nadawany w sklepie internetowym ZIT i umożliwia odbiór węgla przez odbiorcę zamówienie internetowego u KDW (nie na kopalni). Nie ma możliwości cofnięcia kodu odbioru ( w zgłoszonym przypadku zamówienie jest  na etapie ROZLICZONE czyli wszystkie operacje na nim są po stronie księgowości - kopalnia musi wystawić korektę.)",
+      "create_at": "10.04.2025, 11:46:32",
+      "id": 7
+    },
+    {
+      "title": "kontrahent nie otrzymuje maili",
+      "content": "Sprawdzić w portalu KDW w opcjach konfiguracyjnych (prawa, górna strona) konfigurację powiadomień",
+      "create_at": "10.04.2025, 11:47:05",
+      "id": 8
+    },
+    {
+      "title": "problem z potwierdzeniem MMR",
+      "content": "Jeżeli KDW ma problem z potwierdzeniem MMR to należy sprawdzić czy system nie wygenerował podwójnych dokumentów w tablicach:  SEK_SKLAD po SKLAD_PLAT_ID i dacie dokumenu  SEK_SKLAD_POZ po polu POZ_DOK_ID (NR Z TABLICY SEK_SKLAD z pola SKLAD_DOK_ID) i POZ_PZ_POZ_ID w polu SEK_SKLAD_POZ  SEK_ZKLAD_OPAK po polu SKLAD_POZ_ID  Należy usunąć nadmiarowy rekord (o większym numerze) kolejno z SEK_ZKLAD_OPAK, SEK_SKALD_POZ, SEK_SKLAD",
+      "create_at": "10.04.2025, 11:47:39",
+      "id": 9
+    },
+    {
+      "title": "przedłużenie terminu odbioru awizacji",
+      "content": "Może zmienić termin awizacji i ilość samochodów opiekun na kopalni. Edycja awizacji z poziomu SOK",
+      "create_at": "10.04.2025, 11:48:11",
+      "id": 10
+    },
+    {
+      "title": "select do sprawdzania transportu",
+      "content": "w schemacie kwpaypaladm  select * from ds_kdw_koszt where pdm_kdw=167148;",
+      "create_at": "10.04.2025, 11:49:10",
+      "id": 11
+    },
+    {
+      "title": "ścieżka do faktur",
+      "content": " Faktury -> Przeglądanie faktur.",
+      "create_at": "10.04.2025, 11:49:37",
+      "id": 12
+    },
+    {
+      "title": "tonaż w drodze pomimo potwierdzonych dokumentów",
+      "content": "Sprawdzić czy kopalnia, której dotyczy problem ma zamkniętą dobę!!!",
+      "create_at": "10.04.2025, 11:50:05",
+      "id": 13
+    },
+    {
+      "title": "upoważnienia z aukcji",
+      "content": "Aby Klient zobaczył awizację z aukcji musi w portalu w formatce upoważnienia usunąć dane z filtra skład (odbiorca)",
+      "create_at": "16.04.2025, 09:05:59",
+      "id": 14
+    },
+    {
+      "title": "wprowadzanie odbiorcy kolejowego",
+      "content": "Portal KDW -> Moja Firma -> Baza odbiorców -> Zaznaczyć istniejącego odbiorcę i przez czerwony przycisk wybrać stacje własne lub stacje cargo i przycisk \"Dodaj nową stację\"",
+      "create_at": "16.04.2025, 09:06:30",
+      "id": 15
+    },
+    {
+      "title": "ZMIANA WORKA NA PALETE",
+      "content": "NALEŻY W TABLICY SEK_POLFK ZMIENIĆ POLE POLFK_RODZ Z 3 NA 4  POLFK_WYST_ID MUSI BYĆ 188 I POLFK_FRMPLAT_ID MUSI BYĆ 28  OPERACJĘ WYKONAĆ PO ZAMKNIĘCIU DOBY  KDW MUSI POTWIERDZIĆ MMR W PORTALU  SELECT POLFK_NR, POLFK_PLAT_ID, POLFK_RODZ, POLFK_WYST_ID, POLFK_FRMPLAT_ID, POLFK_PREF, POLFK_DATKW FROM SEK_POLFK WHERE POLFK_RODZ=3 AND TO_CHAR(TRUNC(POLFK_DATKW),'YYYY/MM/DD') BETWEEN '2024/07/01' AND '2024/07/31' AND POLFK_WYST_ID=188  ORDER BY POLFK_DATKW DESC;   UPDATE SEK_POLFK SET POLFK_RODZ=4 WHERE POLFK_RODZ=3 AND POLFK_ROK=2024 AND POLFK_WYST_ID=188 AND POLFK_RODZ=3;",
+      "create_at": "16.04.2025, 09:07:00",
+      "id": 16
+    },
+    {
+      "title": "błędna lokalizacja w portalu",
+      "content": "Dane wyświetlane w portalu SPKDW pobierane są z Centralnej Kartoteki Kontrahenta. Wygląda na to, że w powyższej kartotece pracownik PGG niepoprawnie wpisał Państwa kod pocztowy, tj \"26 - 080\" zamiast \"26-080\" (spacje w kodzie pocztowym). Dlatego przy wejściu na portal SPKDW wyskakuje błąd i informacja o nieudanym pobieraniu lokalizacji. Niestety serwis nie może tego poprawić, ponieważ tylko PGG może zmieniać dane w tej kartotece. PGG jest Państwa Administratorem danych.  Proszę skontaktować się z PGG, np. z Opiekunem by ktoś z PGG wpisał poprawny kod pocztowy. Dane po kilkunastu minutach, ewentualnie po przelogowaniu się na portalu SPKDW powinny zostać pobrane poprawnie.  Natomiast jeśli chodzi o wyświetlane dane, tj nazwę to sytuacja jest analogiczna jak powyżej z kodem pocztowym. W Centralnej Kartotece Kontrahenta została niepoprawnie wpisana nazwa. Proszę poinformować Opiekuna by ktoś z PGG poprawił wpisane Państwa dane w kartotece.",
+      "create_at": "16.04.2025, 09:07:54",
+      "id": 18
+    },
+    {
+      "title": "nieprawidłowy kod odbioru pomimo że kod jest dobry",
+      "content": "Nieprawidłowy kod odbioru pomimo że kod jest dobry - sprawdzić inspektora jakości na kopalni, na której nie można potwierdzić kodu",
+      "create_at": "16.04.2025, 09:08:52",
+      "id": 19
+    },
+    {
+      "title": "pobieranie faktur ",
+      "content": "Sprawdzić w CKK w zakładce dokumenty elektroniczne czy KDW ma uprawnienia do otrzymywania faktur elektronicznych przez portal (oświadczenie). Może być przez mail.  W portalu należy: Finanse -> Faktury wybrać z filtrów Jeżeli faktury ma mailowo to: Kontaktowanie się z PGG lub przekazać do OZS",
+      "create_at": "16.04.2025, 09:09:34",
+      "id": 20
+    },
+    {
+      "title": "wysłany węgiel niewidoczny na portalu",
+      "content": "Szukanie innych klas, po wycofaniu wyceny na MMR-ach:  select polfk_kop_id, polfk_sort,polfk_spbwz,polfk_klasa, count(*) from sek_polfk where polfk_rok=2024 and polfk_wyst_id=188 and polfk_typdok=5 group by polfk_kop_id, polfk_sort,polfk_spbwz,polfk_klasa order by  polfk_kop_id, polfk_sort,polfk_spbwz,polfk_klasa  Nie znalazłem na ten czas, na poszczególnych kopalniach dla MMR-ów, 2-ch różnych klas dla tego samego sortymentu. Jak będą pojedyncze przypadki to trzeba by było poprawić. Dzisiaj jedno zgłoszenie od KDW - doszliśmy do tego wspólnymi siłami i jedno z kopalni o złej klasie @everyone To taki umowny select bazujący na tym co było wcześniej wysłane na ten sortyment, nie sprawdzający źródła, czyli zlecenia. Dla solowego  sortymentu, nie mającego drugiego rekordu z większa ilością wpisów ( właściwa klasa) trzeba zerknąć na zlecenie. ",
+      "create_at": "16.04.2025, 09:10:05",
+      "id": 21
+    },
+    {
+      "title": "zatwierdzanie awizacji dodatkowych",
+      "content": "Awizacje dodatkowe są zatwierdzane dwa razy w dobie i robi to automat o godz. 09:00 i 12:00  W SOK można sprawdzić złożone wnioski w menu Awizacje -> Przeglądanie awizacji  Zatwierdzenie następuje tylko wtedy, gdy limity awizacji mają prawidłową wysokość, jeżeli o godz. 09:00 wniosek nie zostanie zatwierdzony, to kopalnia musi ponieść limit KDW przed godziną 12:00, jeżeli tego nie zrobi wniosek zostanie odrzucony.  Musi być limit na kopalni w dniu dzisiejszym, a jak nie to jutrzejszym ( tylko trzeba pamiętać, że wczoraj to dzisiejszy limit był jutrzejszy 🥴 i mogli skonsumować wczoraj).  Oprócz tego musi być limit na zamówieniu no i na planie.",
+      "create_at": "16.04.2025, 09:10:34",
+      "id": 22
+    },
+    {
+      "title": "sprawdzanie czy klient jest KDW",
+      "content": "select * from scm_v_kdw_mv where kdw_pdm_kod= podać nr_kdw; PGG_Produkcja _SCM",
+      "create_at": "16.04.2025, 09:11:00",
+      "id": 23
+    },
+    {
+      "title": "brak możliwości potwierdzenia MMR",
+      "content": "Jeżeli KDW nie może potwierdzić MMR i ma komunikat: \"Dla KDW 71119 zdublowane koszty transportu w tablicy wymiany ze sklepem Internetowym na dzień\" należy sprawdzić czy w widoku SRS_V_DS_KDW_KOSZT nie ma zdublowanych rekordów, a jeżeli są to jeden z nich usunąć!   SELECT * FROM SRS_V_DS_KDW_KOSZT WHERE PDM_KDW=71119;  DELETE FROM SRS_V_DS_KDW_KOSZT WHERE KOSZT_ID=579;   (jest to prosty widok i dlatego można usunąć, nie mając dostępu do tablicy, która jest na bazie pgge04 i schemacie kwpaypaladm) (winny za zdublowany rekord jest ZIT)",
+      "create_at": "28.04.2025, 18:37:24",
+      "id": 25
+    }
+  ],
+  "sql": [
+    {
+      "title": "select do zleceń",
+      "content": "SELECT ZLEC_KOP_ID AS KOPALNIA, ZLEC_DATA_DO AS DATA_WAZNOSCI, COUNT(*) AS ILOSC_ZLECEN     FROM SCM_ZLEC         WHERE ZLEC_FRMPLAT_ID=22              AND ZLEC_ROK=2025             AND ZLEC_WYST_ID=22              AND ZLEC_KLFZL_IDU=1683              AND ZLEC_STATUS=1             AND ZLEC_DATA_DO <= '25/03/31  00:00:00'  GROUP BY ZLEC_KOP_ID, ZLEC_DATA_DO ORDER BY ZLEC_KOP_ID, ZLEC_DATA_DO;",
+      "create_at": "01.04.2025, 10:12:17",
+      "id": 2
+    },
+    {
+      "title": "select do świadectw",
+      "content": "SELECT *  FROM skj4wrde_v_atrybuty_swj  WHERE id = 2093661",
+      "create_at": "01.04.2025, 10:13:07",
+      "id": 3
+    },
+    {
+      "title": "B2B select do kodów",
+      "content": "SELECT KOD FROM DANE_SKLEP WHERE SKLEP_ZAM_ID=5100147",
+      "create_at": "01.04.2025, 10:14:29",
+      "id": 4
+    }
+  ],
+  "eru": [
+    {
+      "title": "wyszukiwanie umów SELECT",
+      "content": "SELECT * FROM   eruadm.eru4all_v_knt_zwolakc WHERE akc_umo_id=2240788",
+      "create_at": "17.04.2025, 10:01:46",
+      "id": 2
+    },
+    {
+      "title": "sysdate czy nie ma dubli w rachunkach ERU",
+      "content": "select do sprawdzania czy na sysdate nie ma dubli w rachunkach z ERU:  select rach_umowa_id,rach_cr_kod_grupy,zaklad,count(*)    from ERU4SOK_V_RACHUNKI_UMOWA_WEGLOWA    where sysdate between umo_data_od and umo_data_do      and zaklad!=1941   group by rach_cr_kod_grupy,zaklad,rach_umowa_id having count(*)>1;",
+      "create_at": "17.04.2025, 10:02:28",
+      "id": 3
+    }
+  ],
+  "scd": [
+    {
+      "title": "Widok_do_kodow_absencji_1008050_procent_obn._-_widok_karty_pracy_z_pac",
+      "content": "Select * from PCZK_V_PRCP4SCD_KARTA_PRACY",
+      "create_at": "17.04.2025, 10:03:24",
+      "id": 2
+    }
+  ],
+  "sok": [
+    {
+      "title": "awizacje na wydłużonych aukcjach",
+      "content": "Brak możliwości nadania awizacji do wydłużonych zleceń aukcyjnych.   JEŻELI SPRAWA DOTYCZY PRZEŁUŻENIA ODBIORU AUKCJI TO NAJPIERW KOPANIA MUSI PRZEDŁUŻYĆ TERMIN ODBIORU (SPRAWDZIĆ CZY UMOWA  JEST PRZEDŁUŻONA) A POTEM ZROBIĆ NOWE ZAMÓWIENIE I PRZETWORZYĆ W ZLECENIE , WTEDY KONTENER OTWORZY SIĘ AUTOMATYCZNIE?  AUKCJĘ sprawdzić w SOK -> Sprzedaż kierunkowa -> Obsługa aukcji po polu \"Sygnatura pozycji aukcji\" (przykład AUK-SW/2024/2578/10)  ZAMÓWIENIE sprawdzić w SOK -> Zamówienia -> Przeglądanie zamówień",
+      "create_at": "07.03.2025, 07:37:32",
+      "id": 2
+    },
+    {
+      "title": " brak tonażu do awizacji",
+      "content": "Powodem jest zerowy tonaż w  planie. Sprawdzamy w SOK -> Awizacje -> Awizacje dodatkowe -> Dodawanie awizacji dodatkowej",
+      "create_at": "07.03.2025, 07:39:31",
+      "id": 3
+    },
+    {
+      "title": "sortyment dodany w scm ale niewidoczny w sok",
+      "content": "W kartotece sortymentów i klas w SOK nie jest widoczny sortyment 043211 - Brykiet węglowy Ekosort Plus worki. Sortyment ten został dodany jako nowy w module SCM jakiś czas temu. Proszę o sprawdzenie dlaczego nie jest on widoczny w SOK.  Sortyment należy dodać nie tylko w sortymentach koncernu ale również w sortymentach kopalni (dla każdej kopalni oddzielnie). Po dodaniu nazwy w SCM wejść do zakładki Sortymenty -> Sortymenty Kopalni -> zaznaczyć konkretny sortyment i przez Nowy dodać sortyment do kopalni.  Jak chcą wydawać za gotówkę, sklep internetowy, wysyłka na skład, zużycie własne, deputat, przewóz na zwał, trzeba dodać również w SCM w zakładce Towary na samochody (aby było możliwe dodanie sortymentu w \"towarach na samochody\" musi on być dopisany do jakiejkolwiek grupy cen)  Należy też skonfigurować sortyment w SOK Kartoteki -> Kartoteka sortymentów i klas",
+      "create_at": "07.03.2025, 12:25:05",
+      "id": 4
+    },
+    {
+      "title": "SERWISOWA ZMIANA UMOWY PRZECHOWANIA",
+      "content": "select z.zam_nr_centrali, zp.* from sok_zamowienia z join sok_zamowienia_poz zp on zp.zamp_zam_id = z.zam_id where z.zam_platnik_id = 73075 and z.zam_eru_id = 2220900 and zp.zamp_plan_poz_id = 10974242 ; Aby to doraźnie zmienić trzeba w tabeli sok_zamowienia_poz w kolumnie zamp_plan_poz_id zmienić wartość 10974242 na 10960768",
+      "create_at": "28.03.2025, 06:11:32",
+      "id": 5
+    },
+    {
+      "title": "przedłużanie daty zamówienia",
+      "content": "Tabela SOK_ZAMOWIENIA szukamy po polu ZAM_NR_CENTRALI='HSZ/011594/25' i zmieniamy pole ZAM_DATA_DO",
+      "create_at": "01.04.2025, 10:06:44",
+      "id": 6
+    },
+    {
+      "title": "serwisowa zmiana umowy przechowania",
+      "content": "select z.zam_nr_centrali, zp.*    from sok_zamowienia z   join sok_zamowienia_poz zp on zp.zamp_zam_id = z.zam_id  where z.zam_platnik_id = 73075    and z.zam_eru_id = 2220900    and zp.zamp_plan_poz_id = 10974242 ;   Aby to doraźnie zmienić trzeba w tabeli sok_zamowienia_poz w kolumnie zamp_plan_poz_id zmienić wartość  10974242 na 10960768",
+      "create_at": "01.04.2025, 10:07:18",
+      "id": 7
+    },
+    {
+      "title": "Plan roczny - przedłużanie planów sprzedaży",
+      "content": "3230184 przedłużoną na 2024 Jankowice dotyczy Chwałowice  230054  541700169 Rydułowy  Plany sprzedaży -> Przeglądanie planów sprzedaży -> sprawdzić czy kontrahent ma plany zdefiniowane Plan sprzedaży -> Przeglądanie pozycji planów -> korekta tonażu i powód korekty  Nowe zamówienie ROW",
+      "create_at": "01.04.2025, 10:08:24",
+      "id": 8
+    },
+    {
+      "title": "podniesienie tonażu w porozumieniu",
+      "content": "Problem: Nie można podwyższyć tonażu do porozumienia drugiego na kwartał 2 do umowy numer 9/P/PGG/2024/E. Potrzeba podwyższyć tonaż o 10000  Znaleźć umowę w tablicy SOK_UMOWA i po ERU_UMO_ID znaleźć konkretne porozumienie w tablicy SOK_POROZUMIENIA po polu UMO_ID i zmienić tonaż w polu TONAZ  W SOK sprawdzić w  Umowy i aneksy -> Obsługa umów LRU np. po numerze płatnika, przycisk POROZUMIENIA ",
+      "create_at": "01.04.2025, 10:10:12",
+      "id": 9
+    },
+    {
+      "title": " odpięcie aukcji od umowy",
+      "content": "ORA_BC_KS zmienić status z 6 na 1 i datę obowiązywania kontenera W ORA_BC_KS_DAT  PO KONSULTACJACH Z KOPALNIĄ",
+      "create_at": "01.04.2025, 10:10:50",
+      "id": 10
+    },
+    {
+      "title": "brak uprawnień do zapisywania zleceń",
+      "content": "Problem: Proszę o sprawdzenie nadanych uprawnień w SOK, gdyż mimo przyznania uprawnień nie posiadam możliwości zapisania zamówienia  Rozwiązanie: Dodano Magdalenę Barteczko (użytkownik: mbarteczko) do ścieżek merytorycznych w module TRS: Ścieżka dla zamówień papierowych i Ścieżka dla korekt papierowych dla modułu SOK.",
+      "create_at": "03.04.2025, 11:20:53",
+      "id": 11
+    },
+    {
+      "title": "dodawanie sortymentu do wzorca",
+      "content": "Aby dodać nowy sortyment do wzorca należy w tabeli SOK_WZORZEC_PLANU_SPRZEDARZY należy wyszukać konkretny wzorzec i skopiować jego WPS_ID a następnie przejść do tabeli SOK_OFERTAH_WZORZEC poszukać OFEH_ID oferty handlowe i tam dopisać ofertę handlową pobraną z tabeli SOK_OFERTH_PLAN  Jeżeli plan jest jeden lub dwa możemy dodać plany sprzedaży w tabeli SOK_OFERTH_PLAN  SZUKANIE PO NAZWACH",
+      "create_at": "03.04.2025, 11:21:26",
+      "id": 12
+    },
+    {
+      "title": "sortyment dodany w SCM ale niewidoczny w SOK",
+      "content": "Temat: W kartotece sortymentów i klas w SOK nie jest widoczny sortyment 043211 - Brykiet węglowy Ekosort Plus worki. Sortyment ten został dodany jako nowy w module SCM jakiś czas temu. Proszę o sprawdzenie dlaczego nie jest on widoczny w SOK.  Sortyment należy dodać nie tylko w sortymentach koncernu ale również w sortymentach kopalni (dla każdej kopalni oddzielnie). Po dodaniu nazwy w SCM wejść do zakładki Sortymenty -> Sortymenty Kopalni -> zaznaczyć konkretny sortyment i przez Nowy dodać sortyment do kopalni.  Jak chcą wydawać za gotówkę, sklep internetowy, wysyłka na skład, zużycie własne, deputat, przewóz na zwał, trzeba dodać również w SCM w zakładce Towary na samochody (aby było możliwe dodanie sortymentu w \"towarach na samochody\" musi on być dopisany do jakiejkolwiek grupy cen)  Należy też skonfigurować sortyment w SOK Kartoteki -> Kartoteka sortymentów i klas",
+      "create_at": "09.04.2025, 12:42:19",
+      "id": 13
+    },
+    {
+      "title": "awizacje na wydłużonych aukcjach",
+      "content": "Brak możliwości nadania awizacji do wydłużonych zleceń aukcyjnych.   JEŻELI SPRAWA DOTYCZY PRZEŁUŻENIA ODBIORU AUKCJI TO NAJPIERW KOPANIA MUSI PRZEDŁUŻYĆ TERMIN ODBIORU (SPRAWDZIĆ CZY UMOWA  JEST PRZEDŁUŻONA) A POTEM ZROBIĆ NOWE ZAMÓWIENIE I PRZETWORZYĆ W ZLECENIE , WTEDY KONTENER OTWORZY SIĘ AUTOMATYCZNIE?  AUKCJĘ sprawdzić w SOK -> Sprzedaż kierunkowa -> Obsługa aukcji po polu \"Sygnatura pozycji aukcji\" (przykład AUK-SW/2024/2578/10)  ZAMÓWIENIE sprawdzić w SOK -> Zamówienia -> Przeglądanie zamówień",
+      "create_at": "09.04.2025, 12:42:59",
+      "id": 14
+    },
+    {
+      "title": "dodawanie opiekuna przez SOK",
+      "content": "Wchodzimy do SOK -> Kartoteki -> Klienci SOK -> Wybieramy konkretnego Kontrahenta -> Edytuj -> i w zakładce Reprezentacja w polu Opiekun wybieramy właściwego opiekuna",
+      "create_at": "09.04.2025, 12:43:30",
+      "id": 15
+    },
+    {
+      "title": " ZMIANA STATUSÓW PRZEDPŁAT",
+      "content": "Kody przedpłaty szukamy w tabelach SOK_PRZEDPLATY i  SOK_PRZEDPLATY2  tablica SOK_PRZEDPLATY2 pole WSK_PRZEDP  aby anulować ustawić na 60 (nie widać kodu przedpłaty w OZS ale widać w SOK). (Możliwe statusy – 10-uzgodnione, 20-przedpłacone, 30-zaakceptowane, 60-anulowane)  tablica SOK_PRZEDPLATY pole PRZ_STATUS -  ustawić status na 6-anulowany (nie widać kodu przedpłaty w SOK). (Możliwe statusy 1 – Uzgodniona, 2 – Przedpłacona, 3 – Zaakceptowana, 4 – Zafakturowana,  5 – Rozliczona, 6 – Anulowana)  ABY ZMIANA ZADZIAŁAŁA NALEŻY DANE POPRAWIĆ W OBU TABELACH  STATUS KODY W TABELI SOK_PRZEPLATY POLE PRZ_STATUS: 1 - UZGODNIONA 2 - PRZEDPŁACONA 3 - ZAAKCEPTOWANA 4 - ZAFAKTUROWANA 5 - ROZLICZONA 6 - ANULOWANA  STATUS KODY W TABELI SOK_PRZEPDLATY2 POLE WSK_PRZED:  10 - UZGODNIONA 20 - PRZEDPŁACONA 30 - ZAAKCEPTOWANA 60 - ANULOWANA  ABY ZMIENIC (PRZEPIĄĆ) PRAWIDŁOWY KOD ODŁACZYĆ WPŁATE OD TEGO KODU PRZEDPŁATY STWORZYĆ NOWY KOD I DOŁĄCZYĆ LUB WYKORZYSTAĆ ISTNIEJACY, PRAWIDŁOWY KOD  Zaliczka Split payment, aby mogli anulowanać samodzielnie fakturę zaliczkową w module FOZS, zmieniamy: __ sok_przedzam2 -> wsk_fak na 70 ( było prawdopodobnie wcześniej 20) sok_przedplaty2 -> wsk_przedpl na 70 ( było prawdopodobnie wcześniej 40)  zmieniam jeszcze sok_przedplaty -> prz_status na 7 ( było prawdopodobnie wczesnIej 4)",
+      "create_at": "09.04.2025, 12:43:58",
+      "id": 16
+    },
+    {
+      "title": "AWIZACJE NA KTW",
+      "content": "W pozycji zamówienia, po wprowadzeniu i zapisaniu zamówienia, pojawia się zapytanie \"Czy utworzyć awizację?\". Po zatwierdzeniu, natomiast pojawia się komunikat: \"Obiekt w trakcie tworzenia, chwilowo niedostępny\", przez co nie można zrobić awizacji.  JEŻELI DOTYCZY TO NOWEGO KONTRAHENTA TO TRZEBA ODCZEKAĆ OK 30 MINUT B Y JOB ZACZYTAŁ DANE DO SOK",
+      "create_at": "09.04.2025, 12:44:54",
+      "id": 17
+    },
+    {
+      "title": "zmiana danych w zamówieniu",
+      "content": "W zamówieniu na przyjęcie nr 67/48567/2024 z dnia 26.08.2024 proszę o korektę kontrahenta z 42204 na kontrahenta 48940 oraz w pozycji zamówienia o zmianę Klasy towaru z 12/350/10 na klasę 12/400/10 i również cenę z 69 zł na cenę 3.88  Rozwiązanie:  Dane zmieniamy schemacie SOK w tabelach:   SOK_ZAM_PRZYJECIA PO POLU NUMER pola DOSTAWCA_ID I WYSYLAJACY_ID (42204 ZMIENIONO NA 48940)  SOK_ZAM_PRZYJECIA_POZ szukając po ZP_ID zmienić SORTKOP_ID (NP. MUŁ) , KLASA_ID (WSZYSTKO OPCJONALNE) (SZUKAMY W SCM W TABELI SCM_SORTKOP i SCM_KLASA) i NAZWA (KLASY)",
+      "create_at": "09.04.2025, 12:45:33",
+      "id": 18
+    },
+    {
+      "title": "PRZEDŁUŻENIE TERMINU ODBIORU Z AUKCJI",
+      "content": "UŻYSZKODNIK MOŻE TO ZROBIĆ Z POZIOMU PROGAMU SOK SPRZEDAŻ KIERUNKOWA -> OBSŁUGA AUKCJI -> ZNALEŚĆ KONKRETNĄ AUKCJE I PRZYCISK \"PRZEDŁUŻ TERMIN ODBIORU\".",
+      "create_at": "09.04.2025, 12:46:12",
+      "id": 19
+    },
+    {
+      "title": "przedłużanie planu sprzedaży",
+      "content": "SOK - PLANY SPRZEDAŻY - DEFINIOWANIE PLANÓW SPRZEDAŻY",
+      "create_at": "09.04.2025, 12:46:41",
+      "id": 20
+    },
+    {
+      "title": "okresy awizacji zwykłej",
+      "content": "Do wtorku do godz. 05:59",
+      "create_at": "09.04.2025, 12:47:22",
+      "id": 21
+    },
+    {
+      "title": "brak tonażu do awizacji",
+      "content": "Powodem jest zerowy tonaż w  planie. Sprawdzamy w SOK -> Awizacje -> Awizacje dodatkowe -> Dodawanie awizacji dodatkowej",
+      "create_at": "10.04.2025, 10:08:55",
+      "id": 22
+    },
+    {
+      "title": "tablica z awizacjami",
+      "content": "SOK_AWIZACJA_TONAZ",
+      "create_at": "10.04.2025, 10:09:22",
+      "id": 23
+    },
+    {
+      "title": "niewidoczny limit u KDW",
+      "content": "Kontakt z Klientem. Wyjaśniono, iż problem dotyczył braku pozycji na planie sprzedaży na ROK 2024 - stąd system uznał, iż limit dostępny  na zamówieni u klienta jest na '- 27 ton'. Po ponownym wykonaniu korekty przez Opiekuna PGG, system prawidłowo utworzył pozycję planu na ROK 2024,  a limit dostępny na zamówieniu po korekcie wynosi  '27 ton' (czyli poprawnie), finalnie Klient otrzymał awizację na węgiel.   Generalnie Klient już ma OK, ale problem dalej występuje, jest to jakiś skrajny przypadek, nietypowe działanie użytkownika w systemie - Leszek będzie to oglądał - jeśli coś podobnego w przyszłości się pojawi, to wystarczy zrobić raz jeszcze korektę na zamówieniu na plus",
+      "create_at": "10.04.2025, 10:09:55",
+      "id": 24
+    },
+    {
+      "title": "zmiana ceny sugerowanej KTW",
+      "content": "Zlecenie treści; „Szczegóły: zamówienia->przyjęcie: 24/48567/2024: 25/48567/2024 29/48567/2024 proszę o zmianę na 1610zł netto„ (domyślnie -  chodzi o zmianę ceny)  sprawdzamy w sok_zam_przyjecia pole numer zamówienia (podane w zleceniu) i odczytujemy zp_id. Następnie w tablicy sok_zam_przyjecia_poz po numerze zp_id znajdujemy rekordy i wymieniamy pole cena_sugerowana,",
+      "create_at": "10.04.2025, 10:10:16",
+      "id": 25
+    },
+    {
+      "title": "Zmiana zamówień (PRZYJĘĆ) na rozładunek",
+      "content": "Zmiana zamówienia w rozładunku – kolej  Jeżeli jest zgłoszenie o zmianę zamówienia dla rozładunku kolejowego sprawdzamy w sok_zam_przyjecia pole numer zamówienia (np.  27/21247/2017 na numer 29/21247/2017) i odczytujemy obydwa zp_id (sprawdzamy  czy nie różną się klasą, sortymentem, dostawcą, wysyłającym). Następnie w tablicy sok_zam_przyjecia_poz po numerach zp_id znajdujemy numery zpp_id. W tablicy sek_listp po numerze zpp_id (błędnym) pole listp_zpp_id znajdujemy właściwy rozładunek (data, nr_kwit) i wymieniamy na właściwy zpp_id. Jeżeli list_p status rozładunku wynosi 2 to znaczy że został przekazany do magazynu, więc należy poprawić dane w magazynie tablica  sek_mag_przyjecia wyszukując po kluczu  zamowienie_poz_id=zpp_id (sok_zam_przyjecia_poz) zamowienie_id=zp_id (sok_zam_przyjecia) zamowienie_nr=numer (sok_zam_przyjecia) zmieniamy dane we wszystkich wagonach dotyczące wymiany jednego zamówienia na drugie.  (Jeżeli w zamówieniach były inne  klasy , sortyment, dostawca, wysyłający to te pola tez należy wymienić w tablicy sek_mag_przyjecia.)   Zmiana zamówienia dla rozładunku – drobnica  Jeżeli jest zgłoszenie o zmianę zamówienia dla rozładunku drobnica sprawdzamy w sok_zam_przyjecia pole numer zamówienia (np.  27/21247/2017 na numer 29/21247/2017) i odczytujemy obydwa zp_id. Następnie w tablicy sok_zam_przyjecia_poz po numerze zp_id znajdujemy numer zpp_id. W sdr_pozbok znajdujemy rekord dotyczący rozładunku i wymieniamy pola zlec_id, pozbok_nazwa,pozbok_miasto,pozbok_ulica ...itd ,zlec_komentarz z błędnego zamówienia na dane z prawidłowego zamówienia. Gdy zamówienia różnią się sortymentem należy w sdr_pozbok poprawić pola prods_id, sortkop_id zgodnie z danymi z tablicy sok_zam_przyjecia_poz dla właściwego zamówienia.  Zlecenie treści; „Szczegóły: zamówienia->przyjęcie: 24/48567/2024: 25/48567/2024 29/48567/2024 proszę o zmianę na 1610zł netto„ (domyślnie -  chodzi o zmianę ceny)  Sprawdzamy w sok_zam_przyjecia pole numer zamówienia (podane w zleceniu) i odczytujemy zp_id. Następnie w tablicy sok_zam_przyjecia_poz po numerze zp_id znajdujemy rekordy i wymieniamy pole cena_sugerowana,",
+      "create_at": "10.04.2025, 10:10:58",
+      "id": 26
+    },
+    {
+      "title": "SOK parametr zatwierdzania limitów awizacji",
+      "content": "Parametr w SOK_PARAMETR wł./wył. tę funkcjonalność: grupa=AWIZACJA    kod=ZATWIERDZ_LIMIT",
+      "create_at": "10.04.2025, 10:11:32",
+      "id": 27
+    },
+    {
+      "title": "odłączenie umowy od aukcji",
+      "content": "SOK -> Sprzedaż kierunkowa -> przycisk \"Odłącz od umowy\"",
+      "create_at": "10.04.2025, 10:11:57",
+      "id": 28
+    },
+    {
+      "title": "tablica z akceptacją przedpłat",
+      "content": "SOK_PRZEDPLATY2 SOK_PRZEDPLATY",
+      "create_at": "10.04.2025, 10:12:29",
+      "id": 29
+    },
+    {
+      "title": " wystawianie upoważnień KDW",
+      "content": "SOK -> Awizacja -> Limit awizacji -> Wprowadzić limit na dany okres SOK -> Awizacja -> Awizacja dodatkowa dla danego kontrahenta na określone dni (5080) Portal KDW -> Odbiory --> Wystawianie upoważnień",
+      "create_at": "10.04.2025, 10:12:53",
+      "id": 30
+    },
+    {
+      "title": "nie można założyć zlecenie dla KDW ",
+      "content": "W tablicy SOK_UMOWA był nieprawidłowy kontrahent, zamiast 163696 był 10477 i w polu UMO_PELNY był wpisany WOLNY NUMER UMOWY. uzupełniono ID_UMOWY i dok odbiory w tablicy SOK_UMOWA_ODBIORCA  select * from eru4all_umowy_nagl where umo_id=2279561; select * from eru4all_v_czesci_umo where id_umo=2279561;",
+      "create_at": "11.04.2025, 08:37:05",
+      "id": 31
+    },
+    {
+      "title": "BRAK MOZLIWOŚCI WYKONANIA AWIZACJI",
+      "content": "W zleceniu był wybrany przewoźnik: 82 - DAMEKS Turczyński/AMP Proksa. Jeśli w zleceniu wybierzemy przewoźnika do świadczenia usługi transportowej, to nie możliwe jest składanie awizacji papierowych w SOK-u. Awizacje wówczas robione są na podstawie harmonogramu z modułu SOP i realizowane poprzez portal przewoźnika SPP. Zmieniono przewoźnika w zleceniu na wartość ogólną: 88 - Przewoźnik\" dla zleceń drobnicowych i awizacje papierową można zrobić w module SOK.",
+      "create_at": "16.04.2025, 11:12:56",
+      "id": 32
+    }
+  ],
+  "sek": [
+    {
+      "title": "różnica o jeden grosz",
+      "content": "Wyszukujemy selectem.   SELECT         \"FAKT_ID\",         \"KOP_ID\",         \"FAKT_SPOBS\",         \"FAKT_PREFIKS\",         \"FAKT_NR\",         \"BOK_ID\",         \"POZBOK_ID\",         \"ID_USER\",         \"URZ_ID\",         \"PROT_ID\",         \"FAKT_PROTNR\",         \"PRODS_ID\",         \"SORTKOP_ID\",         \"SORTWZ_ID\",         \"PRZEW_ID\",         \"STOBST_ID\",         \"STOBSB_ID\",         \"TARAURZ_ID\",         \"BRUTTOURZ_ID\",         \"NETTOURZ_ID\",         \"ID_USERTARA\",         \"ID_USERBRUTTO\",         \"ID_USERNETTO\",         \"WYMDOK_ID\",         \"SZBDOK_ID\",         \"PROBY_ID\",         \"CERT_ID\",         \"DKDOST_ID\",         \"FAKT_BOKWE\",         \"FAKT_BOKWY\",         \"FAKT_ZMIANAWE\",         \"FAKT_ZMIANAWY\",         \"FAKT_CZASEKSP\",         \"PDM_KOD\",         \"FAKT_NIP\",         \"FAKT_NIPUE\",         \"FAKT_KODUE\",         \"FAKT_ODBIORCA\",         \"FAKT_MIASTO\",         \"FAKT_ULICA\",         \"FAKT_NRDOM\",         \"FAKT_NRLOK\",         \"FAKT_KODP\",         \"FAKT_POCZTA\",         \"FAKT_NAZWKIER\",         \"FAKT_IMIEKIER\",         \"FAKT_KODDOKUM\",         \"FAKT_NRDOK\",         \"FAKT_NRREJ\",         \"FAKT_NRREJN\",         \"FAKT_NRREJP\",         \"FAKT_SORT\",         \"FAKT_INDPL\",         \"FAKT_NAZSORT\",         \"FAKT_WSKKLASA\",         \"FAKT_KLASA\",         \"FAKT_NAZKLASA\",         \"FAKT_ARMAX\",         \"FAKT_STRMAX\",         \"FAKT_PKWIU\",         \"FAKT_NAZPKWIU\",         \"FAKT_RODZOBSKOD\",         \"FAKT_CZASWAZT\",         \"FAKT_CZASWAZB\",         \"FAKT_CZASWAZN\",         \"FAKT_KTOTARA\",         \"FAKT_KTOBRUTTO\",         \"FAKT_KTONETTO\",         nvl2(d.pc_dok_id, dp.\"ILOSC\",\"FAKT_TONAZ\") \"FAKT_TONAZ\",         nvl2(d.pc_dok_id, dp.\"CENA\",\"FAKT_CENA\") \"FAKT_CENA\",         \"FAKT_WSKCENA\",         \"FAKT_STOPAVAT\",         nvl2(d.pc_dok_id, dp.\"WART\",\"FAKT_WARTNET\") \"FAKT_WARTNET\",         nvl2(d.pc_dok_id, dp.\"VAT\",\"FAKT_WARTVAT\") \"FAKT_WARTVAT\",         nvl2(d.pc_dok_id, dp.\"WART\" + dp.\"VAT\",\"FAKT_WARTBRU\") \"FAKT_WARTBRU\",         \"FAKT_NRDRUKFIS\",         \"FAKT_NRPARAGON\",         \"FAKT_NRPRZEP\",         \"FAKT_NRPOLZAL\",         \"FAKT_KOMENT\",         \"FAKT_CZEK\",         \"FAKT_WDRU\",         \"FAKT_BOKINFO\",         \"FAKT_AKCYZA\",         nvl2(d.pc_dok_id, dp.\"WARTAK\",\"FAKT_WARTAKC\") \"FAKT_WARTAKC\",         \"FAKT_NRDD\",         \"FAKT_WYSTDD\",         \"FAKT_OBCDD\",         \"FAKT_KTODRU\",         \"FAKT_STATUS\",         \"FAKT_DATAZAL\",         \"FAKT_QRTEKST\",         \"FAKT_STATUSZAL\",         \"FAKT_STATUSFK\",         \"FAKT_TYPWEGLA\",         \"FAKT_SWG\",         \"FAKT_TYPDOK\",         \"FAKT_IDFAKT\",         \"FAKT_NRPAYPAL\",         \"FAKT_DATAPAYPAL\",         \"FAKT_SKLEPID\",         \"FAKT_GRPLATPAYPAL\",         \"JM_SYMBOL\",         \"PDM_PLKOD\",         \"FAKT_PLNIP\",         \"FAKT_PLNIPUE\",         \"FAKT_PLKODUE\",         \"FAKT_PLATNIK\",         \"FAKT_PLMIASTO\",         \"FAKT_PLULICA\",         \"FAKT_PLNRDOM\",         \"FAKT_PLNRLOK\",         \"FAKT_PLKODP\",         \"FAKT_PLPOCZTA\",         dp.\"PC_PCT_ID\",         nvl(dp.\"PC_PCT_ZAKRES\",1) PC_PCT_ZAKRES     FROM         sdr_faktura         left join sek_pc_dok d on (d.pc_fakt_id = fakt_id and d.pc_dok_typ = 0)         left join sek_pc_dok_poz dp on (dp.pc_dok_id = d.pc_dok_id)     WHERE fakt_id in (2454314,2454313 ) ;       select * from sek_kwtfk where kwtfk_fakt_id in (2454314,2454313 );       select * from SEK_ZBYTNF where zbytnf_id = 1262616; select * from SEK_PC_dok D         join sek_pc_dok_poz dp on (dp.pc_dok_id = d.pc_dok_id)         where pc_zbytnf_id =  1262616 ----------------------------------------------------------- Poprawiamy tylko w transorcie czyli  61.       update (select * from sek_pc_dok_poz where pc_dok_id = 4172415 and pc_pct_id = 1) set wart = 1138.22; update (select * from sek_pc_dok_poz where pc_dok_id = 4172415 and pc_pct_id = 61) set wart = 180.80; commit work;",
+      "create_at": "23.04.2025, 10:39:10",
+      "id": 2
+    },
+    {
+      "title": "dopisanie MMR do dofakturowania",
+      "content": "NALEŻY W TABLICY SEK_POLFK ZMIENIĆ POLE POLFK_RODZ Z 3 NA 4  OPERACJĘ WYKONAĆ PO ZAMKNIĘCIU DOBY  POLFK_WYST_ID MUSI BYĆ 188 I POLFK_FRMPLAT_ID MUSI BYĆ 28  KDW MUSI POTWIERDZIĆ MMR W PORTALU   SELECT POLFK_ID, POLFK_NR, POLFK_PLAT_ID, POLFK_RODZ, POLFK_WYST_ID, POLFK_FRMPLAT_ID, POLFK_PREF, POLFK_DATKW, POLFK_TONAZ, POLFK_KOP_ID FROM SEK_POLFK WHERE POLFK_RODZ=3 AND TO_CHAR(TRUNC(POLFK_DATKW),'YYYY/MM/DD') BETWEEN '2025/02/01' AND '2025/02/31' AND POLFK_WYST_ID=188  ORDER BY POLFK_DATKW DESC;   SELECT POLFK_RODZ FROM SEK_POLFK WHERE polfk_nr in (  );  UPDATE sek_polfk SET polfk_rodz=4 WHERE polfk_nr in (  );  COMMIT;",
+      "create_at": "23.04.2025, 10:39:57",
+      "id": 3
+    },
+    {
+      "title": "błąd numeratora przy tworzeniu listu przewozowego",
+      "content": "Jeżeli przy tworzeniu listu przewozowego pojawia się błąd \"brak numeratora\" należy sprawdzić czy numerator jest skojarzony z przewoźnikiem w numeratorze dokumentów w SEK -> Konfiguracja -> Numeratory dokumentów -> wybrać kopalnię -> wybrać list przewozowy i sprawdzić Rodzaje pociągów (przycisk), do rodzaju pociągu MUSI BYĆ PRZYPORZADKOWANY NUMERATOR (pole nie może być puste)",
+      "create_at": "23.04.2025, 10:40:34",
+      "id": 4
+    },
+    {
+      "title": "powiązanie sortymentu z SWM",
+      "content": "Robimy to w SEK -> Zwały SWM -> SWM - integracja zwałów",
+      "create_at": "23.04.2025, 10:41:14",
+      "id": 5
+    },
+    {
+      "title": "błąd drukowania listu elektronicznego",
+      "content": "Problem:  Podczas tworzenia listu elektronicznego występują błędy walidacji i status przesyłka jest odrzucona. Błąd 40006 i 40009  Solucja: W systemie SEK, w danych kontrahentów i liście ELP nie znaleziono błędów. Sprawa dotyczy portalu PKP i weryfikacji danych po stronie PKP. W systemie KSP nie są to nowi kontrahenci tylko wieloletni i ELP-y nie tworzone dla nich są po raz pierwszy. Rozmawiano z użytkownikiem i to strona PKP, powinna to zweryfikować.",
+      "create_at": "23.04.2025, 10:41:38",
+      "id": 6
+    },
+    {
+      "title": "usuwanie dodatkowych wpisów na litach przewozowych",
+      "content": "Aby wyłączyć dodatkowy wpis na liście przewozowym należy w tabeli SCM_PARKOP ustawić pole PARKOP_STATUS na 0. Jeżeli wpis dotyczy wszystkich kopalń a chcemy wyłączyć tylko na jednej, trzeba dołożyć rekordy dla konkretnej kopalni i wyłączyć tylko na niej.",
+      "create_at": "23.04.2025, 10:42:22",
+      "id": 7
+    },
+    {
+      "title": "usuwanie zawiadomienie o wagonie",
+      "content": "Dane znajdują się w bazie SEK_KOLDOK  NIE USUWAMY JEŻELI ZAWIADOMIENIE JEST W STATUSIE ARCHIWALNY  KOLEJNOŚĆ NUMERACJI MOŻNA ZMIENIC W SEK -> KONFIGURACJA -> NUMERATORY DOKUMENTÓW",
+      "create_at": "23.04.2025, 10:42:54",
+      "id": 8
+    },
+    {
+      "title": "tablica z warunkami nowego raportu",
+      "content": "SEK_RAPORT_STALY",
+      "create_at": "23.04.2025, 10:43:21",
+      "id": 9
+    },
+    {
+      "title": "select do rozkompilowanych pakietów",
+      "content": "SELECT *  FROM user_objects  WHERE TRIM(UPPER(status)) NOT LIKE 'VALID'",
+      "create_at": "23.04.2025, 10:43:57",
+      "id": 10
+    },
+    {
+      "title": "zmiana daty zaliczenia wagonów",
+      "content": "W przypadku gdy wagony zaliczają się nie w tej dobie, w której powinny należy sprawdzić i ewentualnie poprawić dane w tabeli: SEK_WAGN w polach WAGN_DATAKW i  WAGN_DATRD  OPERACJĘ MOŻNA WYKONAĆ TYLKO WTEDY GDY DOBA NIE JEST ZAMKNIĘTA",
+      "create_at": "23.04.2025, 10:44:25",
+      "id": 11
+    },
+    {
+      "title": "zmiana odbiorcy w poleceniu fakturowania polecenia",
+      "content": "Problem:  Bardzo proszę o serwisową zmianę w poleceniu fakturowania 71427204 Odbiorcę na Enea Elektrownia Połaniec Spółka Akcyjna (CKK 18485). Zlecenie z którego wyjechał pociąg 2911027 niestety w momencie tworzenia listu przewozowego i zamykania doby ekspedycyjnej miało błędnego Odbiorcę (ENEA Wytwarzanie Sp. z o.o.) i został poprawiony dopiero dzisiaj. Zależy nam na prawidłowo wystawionej fakturze.  Rozwiązanie:  Aby zmienić odbiorcę na poleceniu fakturowania należy dokonać zmian w tablicy SEK_POLFK w polach POLFK_ODB_ID, POFLK_ODB_ID I POLFK_AD_ODB_ID (wstawiamy nr właściwego odbiorcy taki jaki ma w CKK).  Aby zmienić odbiorcę w zleceniu należy dokonać zmian w tablicy SEK_ZLEC w polu ZLEC_ODB_ID (wstawiamy nr właściwego odbiorcy taki jaki ma w CKK).  Zmieniamy także w SOK w tablicy SOK_ZAMOWIENIA pole ZAM_ODBIORCA_ID (szukamy w sok_zamowienia_poz po polu zamp_zlec_id wskazane zlecenie i by dostać id zamówienia w polu zamp_zam_id)  ZMIANY MUSZĄ BYĆ DOKONANE W OBU MIEJSCACH (W SCM_ZLEC TYLKO WTEDY KIEDY NIE BYŁO WCZEŚNIEJSZYCH WYSYŁEK)  TYLKO DLA JSW:  W Sop-ie ( bo tam robią tylko na JSW dyspozycje kolejowe)  w  sop_harmonogram_pozycja szukając po zlecenie_id zmieniłem odbiorcę w polu  odbiorca_id   I na deser szukałem listu: w sek_koldok po numerze listu i id kopalni w polu: koldok_nr ( wziąłem do z aplikacji) zmieniłem pola: koldok_odb_id ( to pole jest odpowiednikiem polfk_kl_odb_id) i pole koldok_ad_id ( to pole jest odpowiednikiem polfk_ad_odb_id)",
+      "create_at": "22.05.2025, 06:47:35",
+      "id": 12
+    },
+    {
+      "title": " nie drukuje się nr listu przewozowego",
+      "content": "Sprawdzić czy w SEK -> Konfiguracja -> Parametry po wybraniu kopalni i konkretnego dokumentu w parametrze cim_plprzewnr nie znajduje się nr przewoźnika, jeżeli jest to dla tego przewoźnika nr listu się  NIE DRUKUJE",
+      "create_at": "22.05.2025, 06:48:16",
+      "id": 13
+    },
+    {
+      "title": "poprawa numeracji przesunięcia węgla",
+      "content": "Problem: Prośba o poprawę numeracji w przesunięciu węgla numer WOL/46/PIA/2446000001 na końcówkę WOL/46/PIA/2446000002 za dzień 15.11.2024  W schemacie SEK w tabeli SEK_POLF wymienić polfk_nr na prawidłowy",
+      "create_at": "22.05.2025, 06:48:47",
+      "id": 14
+    },
+    {
+      "title": "zmiana daty dostawy usługi ",
+      "content": "Dokonujemy zmiany w tabeli SEK_POLFK w polu sek_datasp",
+      "create_at": "22.05.2025, 06:49:20",
+      "id": 15
+    },
+    {
+      "title": "poprawa MMR przy dofakturowaniu",
+      "content": "W tablicy sek_sklad_poz szukając, po poz_dok_id z tablicy sek_sklady, przepisujemy wartość z sklad_poz_id do pola poz_pz_poz_id (wymazując pole sklad_poz_id) i po otrzymaniu kolejnej listy danych, zmieniamy poz_pz_poz_id z błednego MMP na właściwe.",
+      "create_at": "22.05.2025, 06:50:33",
+      "id": 16
+    },
+    {
+      "title": "manipulacja zwałami",
+      "content": "SEK -> RAPORT DOBOWY - REJESTRACJA ZWAŁÓW",
+      "create_at": "22.05.2025, 06:51:04",
+      "id": 17
+    },
+    {
+      "title": "WAGA ELEKTRONICZNA WIDOK",
+      "content": "DANE ZNAJDUJĄ SIE W WIDOKU SEK_V_E03_213 - ZIEMOWIT",
+      "create_at": "22.05.2025, 07:21:55",
+      "id": 18
+    },
+    {
+      "title": "zerowanie WZ przy wykupie ze składu",
+      "content": "Korekta wykupu ze składu nie aktualizuje stanu magazynowego Szukamy w tablicy SEK_SKLAD w polu DOK_NUMER (tu podajemy nr WZ-tki) potem w tablicy SEK_SKLAD_POZ w polu POZ_DOK_ID wstawiamy wartość z pola SKLAD_DOK_ID z tabeli SEK_SKLAD  SEK_SKLAD, SEK_SKLAD_POZ, SEK_SKLAD_OPAK wstawiamy 0  W TABLICY SEK_SKLAD OPAK SZUKAMY PO POLU SKLAD_POZ_ID Z TABLICY SEK_SKLAD_POZ Z POLA O TEJ SAMEJ NAZWIE",
+      "create_at": "22.05.2025, 07:23:54",
+      "id": 19
+    },
+    {
+      "title": "tablica z danymi zwałów",
+      "content": "SEK_STODP I SEK_RUCHODP  SELECT * FROM SEK_RUCHODP WHERE RUCHODP_KOP_ID = 8  AND RUCHODP_STODP_ID = 121 AND EXTRACT(YEAR FROM RUCHODP_DATA) BETWEEN 2012 AND 2014;   UPDATE SEK_RUCHODP SET RUCHODP_STODP_ID = 21 WHERE RUCHODP_KOP_ID = 8  AND RUCHODP_STODP_ID = 121 AND EXTRACT(YEAR FROM RUCHODP_DATA) BETWEEN 2012 AND 2014;  SELECT RUCHODP_DATA, COUNT(*) FROM SEK_RUCHODP WHERE RUCHODP_KOP_ID = 8  AND RUCHODP_STODP_ID in (121,21) GROUP BY RUCHODP_DATA;  SELECT RUCHODP_DATA, RUCHODP_ZMIANA, COUNT(*) FROM SEK_RUCHODP WHERE RUCHODP_KOP_ID = 8  AND RUCHODP_STODP_ID in (121,21) GROUP BY RUCHODP_DATA, RUCHODP_ZMIANA;  COMMIT;",
+      "create_at": "22.05.2025, 07:25:01",
+      "id": 20
+    },
+    {
+      "title": "szybka ścieżka",
+      "content": "Dostępna tylko dla DEPOZYTU",
+      "create_at": "22.05.2025, 07:25:35",
+      "id": 21
+    },
+    {
+      "title": "zmiana grupy cen w zleceniu i poleceniu fakturowania",
+      "content": "KONIECZNIE SPRAWDZIĆ CZY ZLECENIA MA POLECENIA FAKTUROWANIA W STATUSIE P  Aby zmienić grupę cen w zleceniu należy w tabeli SCM_GRCEN znaleść po polu GRCEN_KODN znaleść GRCEN_ID i w tabeli ZLEC_GRCEN_ID wstawić prawidłową wartość.  Aby zmienić grupę cen w poleceniu fakturowania należy w tableli SEK_POLF wyszukać konkretne polecenie po polu POLFK_NR i w polu POLFK_GRCEN_ID wstawic kod prawidłowej grupy cen (pobranej z tabeli SCM_GRCEN)",
+      "create_at": "22.05.2025, 07:38:32",
+      "id": 22
+    },
+    {
+      "title": "Zmiana tonażu w ruchach podziemnych",
+      "content": "Zmiany dokonujemy w tablicy SEK_RUCHPOD",
+      "create_at": "27.08.2025, 08:58:40",
+      "id": 23
+    },
+    {
+      "title": "Zmiana numeru aukcji",
+      "content": "Aby zmienić nr aukcji należy w tabelach:  SCM_ZLEC PO POLU ZLEC_PLAT_ID ZNALEŚC KLIENTA i w polu ZLEC_KLIZAM POPRAWIĆ NUMER AUKCJI  TO SAMO W TABELI  SOK_ZAMOWIANIA ZMIENIĆ ZAM_NR_KLIENTA  PRZYKŁĄDOWY NR AUKCJI:  AUK-SW/2024/1912/1",
+      "create_at": "27.08.2025, 08:59:31",
+      "id": 24
+    }
+  ],
+  "sdr": [
+    {
+      "title": "TESTOWY TYTUL",
+      "content": "testowy content",
+      "id": 1
+    }
+  ],
+  "skj": [
+    {
+      "title": "TESTOWY TYTUŁ EDYTOWANY podwójnie",
+      "content": "Testowa treść edytowany podwójnie",
+      "create_at": "15.03.2025, 13:32:36",
+      "id": 1
+    }
+  ],
+  "slab": [],
+  "sop": [
+    {
+      "id": 1,
+      "title": "Testowy tytul",
+      "content": "testowy content",
+      "create_at": "3.03.2025"
+    }
+  ],
+  "szyk3": [],
+  "wadm": [
+    {
+      "title": "TEST chat",
+      "content": "TESTOWY CONTENT chat",
+      "create_at": "24.09.2025, 12:50:40",
+      "id": 1
+    }
+  ]
+}

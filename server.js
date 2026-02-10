@@ -54,15 +54,11 @@ app.get('/api/entries', (req, res) => {
     });
 });
 
-// GET - pobierz unikalne moduły
+// GET - pobierz wszystkie moduły (nawet te bez wpisów)
 app.get('/api/modules', (req, res) => {
-    db.all('SELECT DISTINCT module FROM entries ORDER BY module', (err, rows) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        res.json(rows.map(r => r.module));
-    });
+    // Lista wszystkich modułów systemu
+    const allModules = ['srs', 'scm', 'kdw', 'sql', 'eru', 'scd', 'sok', 'sek', 'sdr', 'skj', 'slab', 'sop', 'szyk3', 'wadm'];
+    res.json(allModules);
 });
 
 // POST - dodaj nowy wpis
