@@ -1,8 +1,8 @@
-import { API_URL } from '../constants.js';
+const API_URL = window.location.origin + '/api';
 
 export async function loadModules() {
     try {
-        const response = await fetch(`${API_URL}/modules`);
+        const response = await fetch(`${API_URL}/modules`, { credentials: 'include' });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }

@@ -13,11 +13,35 @@
     <div class="container">
         <header>
             <h1>System Zarządzania Rozwiązaniami</h1>
+            <div id="user-info" class="user-info" style="display: none;">
+                <span id="user-name"></span>
+                <span id="login-time"></span>
+                <button id="logout-btn" class="logout-btn">Wyloguj</button>
+            </div>
         </header>
 
-        <!-- Przycisk dodawania -->
+        <!-- Przycisk dodawania i panel admina -->
         <section class="add-button-section">
             <button id="add-entry-btn" class="add-entry-btn">+ Dodaj nowy wpis</button>
+            <button id="toggle-admin-btn" class="add-entry-btn" style="display: none; margin-left: 10px;">Zarządzanie użytkownikami</button>
+        </section>
+
+        <!-- Sekcja admina - tworzenie użytkowników -->
+        <section class="admin-section" id="admin-section" style="display: none;">
+            <h2>Zarządzanie użytkownikami</h2>
+            <form id="create-user-form">
+                <div class="form-group">
+                    <label for="new-user-mail">Email nowego użytkownika:</label>
+                    <input type="email" id="new-user-mail" required placeholder="Wprowadź email">
+                </div>
+                <div class="form-group">
+                    <label for="new-user-password">Hasło:</label>
+                    <input type="password" id="new-user-password" required placeholder="Wprowadź hasło (min. 4 znaki)">
+                </div>
+                <button type="submit" id="create-user-btn">Utwórz użytkownika</button>
+                <button type="button" id="close-admin-btn" style="margin-left: 10px; background: #f44336;">Zamknij</button>
+            </form>
+            <div id="create-user-message"></div>
         </section>
 
         <!-- Formularz dodawania/edycji -->

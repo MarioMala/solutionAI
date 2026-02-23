@@ -1,13 +1,12 @@
-import { API_URL } from '../constants.js';
+const API_URL = window.location.origin + '/api';
 
 export async function editEntry(id) {
     try {
-        const response = await fetch(`${API_URL}/entries`);
+        const response = await fetch(`${API_URL}/entries/${id}`, { credentials: 'include' });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const entries = await response.json();
-        const entry = entries.find(e => e.id === id);
+        const entry = await response.json();
         return entry;
     } catch (error) {
         console.error('Błąd w editEntry:', error);

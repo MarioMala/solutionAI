@@ -1,4 +1,4 @@
-import { API_URL } from '../constants.js';
+const API_URL = window.location.origin + '/api';
 
 export async function loadEntries(filterModule, filterSearch) {
     const module = filterModule;
@@ -9,7 +9,7 @@ export async function loadEntries(filterModule, filterSearch) {
     if (search) url += `search=${encodeURIComponent(search)}`;
     
     try {
-        const response = await fetch(url);
+        const response = await fetch(url, { credentials: 'include' });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }

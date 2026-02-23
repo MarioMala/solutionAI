@@ -1,88 +1,87 @@
 import sqlite3 from 'sqlite3';
-import fs from 'fs';
+import mysql from 'mysql2/promise';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dbPath = path.join(__dirname, 'database', 'database.sqlite');
-const db = new sqlite3.Database(dbPath);
+// Ścieżka do bazy SQLite
+const sqlitePath = path.join(__dirname, 'database.sqlite');
 
-const jsonPath = path.join(__dirname, 'db_old.json');
-const jsonData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+// Konfiguracja MySQL
+const mysqlConfig = {
+    host: 'localhost',
+    port: 3306,
+    user: 'root',
+    password: '',
+    database: 'solucje'
+};
 
-const modules = ['srs', 'scm', 'kdw', 'sql', 'eru', 'scd', 'sok', 'sek', 'sdr', 'skj', 'slab', 'sop', 'szyk3', 'wadm'];
-
-let totalProcessed = 0;
-let totalImported = 0;
-let skippedCount = 0;
-
-db.serialize(() => {
-    // Drop and recreate table to ensure clean import
-    db.run(`DROP TABLE IF EXISTS entries`);
-
-    db.run(`
-        CREATE TABLE entries (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            module TEXT NOT NULL,
-            original_id INTEGER,
-            title TEXT NOT NULL,
-            content TEXT,
-            at_date DATETIME,
-            edit_date DATETIME,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(module, original_id)
-        )
-    `);
-
-    // Use INSERT OR IGNORE to skip duplicates within same module
-    const stmt = db.prepare(`
-        INSERT OR IGNORE INTO entries (module, original_id, title, content, at_date, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-    `);
-
-    for (const module of modules) {
-        if (jsonData[module] && Array.isArray(jsonData[module])) {
-            for (const entry of jsonData[module]) {
-                if (!entry.id) {
-                    skippedCount++;
-                    continue;
-                }
-
-                // Convert create_at format (DD.MM.RRRR, HH:MM:SS) to SQLite datetime format
-                let createdAt = null;
-                if (entry.create_at) {
-                    const parts = entry.create_at.split(', ');
-                    if (parts.length === 2) {
-                        const dateParts = parts[0].split('.');
-                        const timeParts = parts[1].split(':');
-                        if (dateParts.length === 3 && timeParts.length === 3) {
-                            createdAt = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]} ${timeParts[0]}:${timeParts[1]}:${timeParts[2]}`;
-                        }
-                    }
-                }
-
-                stmt.run(module, entry.id, entry.title || '', entry.content || '', null, createdAt);
-                totalImported++;
-                totalProcessed++;
+const migrate = async () => {
+    console.log('Rozpoczęcie migracji danych z SQLite do MySQL...');
+    
+    // Otwórz bazę SQLite
+    const sqliteDb = new sqlite3.Database(sqlitePath);
+    
+    // Otwórz połączenie MySQL
+    const mysqlPool = mysql.createPool(mysqlConfig);
+    
+    try {
+        // Pobierz wszystkie dane z SQLite
+        sqliteDb.all('SELECT * FROM entries', async (err, rows) => {
+            if (err) {
+                console.error('Błąd odczytu z SQLite:', err.message);
+                process.exit(1);
             }
-            console.log(`Processed ${jsonData[module].length} entries from module: ${module}`);
-        }
+            
+            console.log(`Znaleziono ${rows.length} rekordów w SQLite`);
+            
+            if (rows.length === 0) {
+                console.log('Brak danych do migracji');
+                sqliteDb.close();
+                process.exit(0);
+            }
+            
+            // Wstaw dane do MySQL
+            for (const row of rows) {
+                const sql = `
+                    INSERT INTO entries (id, module, title, content, at_date, edit_date, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                `;
+                
+                try {
+                    await mysqlPool.execute(sql, [
+                        row.id,
+                        row.module,
+                        row.title,
+                        row.content || '',
+                        row.at_date || null,
+                        row.edit_date || null,
+                        row.created_at || new Date()
+                    ]);
+                    console.log(`Migrowano wpis ID: ${row.id}`);
+                } catch (err) {
+                    console.error(`Błąd migracji wpisu ID ${row.id}:`, err.message);
+                }
+            }
+            
+            console.log('Migracja zakończona!');
+            
+            // Weryfikacja
+            const [count] = await mysqlPool.execute('SELECT COUNT(*) as count FROM entries');
+            console.log(`W MySQL znajduje się ${count[0].count} rekordów`);
+            
+            sqliteDb.close();
+            await mysqlPool.end();
+            process.exit(0);
+        });
+    } catch (err) {
+        console.error('Błąd migracji:', err.message);
+        sqliteDb.close();
+        await mysqlPool.end();
+        process.exit(1);
     }
+};
 
-    stmt.finalize();
-});
-
-db.close((err) => {
-    if (err) {
-        console.error('Błąd zamykania bazy danych:', err.message);
-    } else {
-        console.log(`\nMigration completed!`);
-        console.log(`Total entries processed: ${totalProcessed}`);
-        console.log(`Entries imported (incl. duplicates skipped): ${totalImported}`);
-        if (skippedCount > 0) {
-            console.log(`Entries skipped (no id): ${skippedCount}`);
-        }
-    }
-});
+migrate();

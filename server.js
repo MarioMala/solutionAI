@@ -1,7 +1,15 @@
 import express from 'express';
+import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import db from './database/db.js';
+import dotenv from 'dotenv';
+import { pool, initDatabase } from './database/mysql.js';
+import { validateCreateEntry, validateUpdateEntry, validateId } from './validators/entryValidator.js';
+import { ALLOWED_MODULES, MAX_LENGTHS, ERROR_MESSAGES } from './constants.js';
+import authRoutes from './routes/auth.js';
+import { requireAuth } from './middleware/auth.js';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,7 +17,16 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
+// Middleware sesji
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'solucje-ai-secret-key-2024',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        maxAge: 24 * 60 * 60 * 1000 // 24 godziny
+    }
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -25,19 +42,48 @@ app.use((req, res, next) => {
     next();
 });
 
-// GET - pobierz wszystkie wpisy (z filtrowaniem)
-app.get('/api/entries', (req, res) => {
+// Trasy autoryzacji
+app.use('/api/auth', authRoutes);
+
+// GET - pobierz pojedynczy wpis (wymaga logowania)
+app.get('/api/entries/:id', requireAuth, async (req, res) => {
+    const id = req.params.id;
+    
+    if (!validateId(id)) {
+        return res.status(400).json({ error: ERROR_MESSAGES.INVALID_ID });
+    }
+    
+    try {
+        const [rows] = await pool.execute('SELECT * FROM entries WHERE id = ?', [id]);
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Wpis nie znaleziony' });
+        }
+        res.json(rows[0]);
+    } catch (err) {
+        console.error('Błąd SELECT:', err.message);
+        res.status(500).json({ error: ERROR_MESSAGES.INTERNAL_ERROR });
+    }
+});
+
+// GET - pobierz wszystkie wpisy (z filtrowaniem) - wymaga logowania
+app.get('/api/entries', requireAuth, async (req, res) => {
     const { module, search } = req.query;
     
     let sql = 'SELECT * FROM entries WHERE 1=1';
     const params = [];
     
     if (module) {
+        if (typeof module !== 'string' || module.length > MAX_LENGTHS.MODULE) {
+            return res.status(400).json({ error: ERROR_MESSAGES.INVALID_MODULE_PARAM });
+        }
         sql += ' AND UPPER(module) = ?';
         params.push(module.toUpperCase());
     }
     
     if (search) {
+        if (typeof search !== 'string' || search.length > MAX_LENGTHS.SEARCH) {
+            return res.status(400).json({ error: ERROR_MESSAGES.INVALID_SEARCH_PARAM });
+        }
         sql += ' AND (title LIKE ? OR content LIKE ?)';
         const searchTerm = `%${search}%`;
         params.push(searchTerm, searchTerm);
@@ -45,75 +91,98 @@ app.get('/api/entries', (req, res) => {
     
     sql += ' ORDER BY created_at DESC';
     
-    db.all(sql, params, (err, rows) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
+    try {
+        const [rows] = await pool.execute(sql, params);
         res.json(rows);
-    });
+    } catch (err) {
+        console.error('Błąd SELECT:', err.message);
+        res.status(500).json({ error: ERROR_MESSAGES.INTERNAL_ERROR });
+    }
 });
 
-// GET - pobierz wszystkie moduły (nawet te bez wpisów)
-app.get('/api/modules', (req, res) => {
-    // Lista wszystkich modułów systemu
-    const allModules = ['srs', 'scm', 'kdw', 'sql', 'eru', 'scd', 'sok', 'sek', 'sdr', 'skj', 'slab', 'sop', 'szyk3', 'wadm'];
-    res.json(allModules);
+// GET - pobierz wszystkie moduły (wymaga logowania)
+app.get('/api/modules', requireAuth, (req, res) => {
+    res.json(ALLOWED_MODULES);
 });
 
-// POST - dodaj nowy wpis
-app.post('/api/entries', (req, res) => {
-    const { module, title, content, at_date } = req.body;
+// POST - dodaj nowy wpis (wymaga logowania)
+app.post('/api/entries', requireAuth, async (req, res) => {
+    const validation = validateCreateEntry(req.body);
+    if (!validation.isValid) {
+        return res.status(400).json({ error: validation.errors.join(', ') });
+    }
+    
+    const { module, title, content } = req.body;
     
     const sql = `
-        INSERT INTO entries (module, title, content, at_date, edit_date)
-        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+        INSERT INTO entries (module, title, content, edit_date)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
     `;
     
-    db.run(sql, [module, title, content || '', at_date || null], function(err) {
-        if (err) {
-            console.error('Błąd INSERT:', err.message);
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        res.json({ id: this.lastID, message: 'Wpis dodany' });
-    });
+    try {
+        const [result] = await pool.execute(sql, [module.toUpperCase(), title, content || '']);
+        res.json({ id: result.insertId, message: 'Wpis dodany' });
+    } catch (err) {
+        console.error('Błąd INSERT:', err.message);
+        res.status(500).json({ error: ERROR_MESSAGES.INTERNAL_ERROR });
+    }
 });
 
-// PUT - edytuj wpis
-app.put('/api/entries/:id', (req, res) => {
-    const { module, title, content, at_date } = req.body;
+// PUT - edytuj wpis (wymaga logowania)
+app.put('/api/entries/:id', requireAuth, async (req, res) => {
     const id = req.params.id;
+    
+    if (!validateId(id)) {
+        return res.status(400).json({ error: ERROR_MESSAGES.INVALID_ID });
+    }
+    
+    const validation = validateUpdateEntry(req.body);
+    if (!validation.isValid) {
+        return res.status(400).json({ error: validation.errors.join(', ') });
+    }
+    
+    const { module, title, content } = req.body;
     
     const sql = `
         UPDATE entries 
-        SET module = ?, title = ?, content = ?, at_date = ?, edit_date = CURRENT_TIMESTAMP
+        SET module = ?, title = ?, content = ?, edit_date = CURRENT_TIMESTAMP
         WHERE id = ?
     `;
     
-    db.run(sql, [module, title, content || '', at_date || null, id], function(err) {
-        if (err) {
-            console.error('Błąd UPDATE:', err.message);
-            res.status(500).json({ error: err.message });
-            return;
-        }
+    try {
+        await pool.execute(sql, [module?.toUpperCase(), title, content || '', id]);
         res.json({ message: 'Wpis zaktualizowany' });
-    });
+    } catch (err) {
+        console.error('Błąd UPDATE:', err.message);
+        res.status(500).json({ error: ERROR_MESSAGES.INTERNAL_ERROR });
+    }
 });
 
-// DELETE - usuń wpis
-app.delete('/api/entries/:id', (req, res) => {
+// DELETE - usuń wpis (wymaga logowania)
+app.delete('/api/entries/:id', requireAuth, async (req, res) => {
     const id = req.params.id;
     
-    db.run('DELETE FROM entries WHERE id = ?', id, function(err) {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
+    if (!validateId(id)) {
+        return res.status(400).json({ error: ERROR_MESSAGES.INVALID_ID });
+    }
+    
+    try {
+        await pool.execute('DELETE FROM entries WHERE id = ?', [id]);
         res.json({ message: 'Wpis usunięty' });
-    });
+    } catch (err) {
+        console.error('Błąd DELETE:', err.message);
+        res.status(500).json({ error: ERROR_MESSAGES.INTERNAL_ERROR });
+    }
 });
 
-app.listen(PORT, () => {
-    console.log(`Serwer działa na http://localhost:${PORT}`);
+// Inicjalizacja bazy danych i start serwera
+initDatabase().then((success) => {
+    if (success) {
+        app.listen(PORT, () => {
+            console.log(`Serwer działa na http://localhost:${PORT}`);
+        });
+    } else {
+        console.error('Nie udało się połączyć z bazą danych');
+        process.exit(1);
+    }
 });
