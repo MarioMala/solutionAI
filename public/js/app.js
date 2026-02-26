@@ -1,5 +1,6 @@
 // Imports from helpers
 import { loadEntries } from './helpers/loadEntries.js';
+import { loadEntriesCount } from './helpers/loadEntriesCount.js';
 import { loadModules } from './helpers/loadModules.js';
 import { renderEntries } from './helpers/renderEntries.js';
 import { editEntry } from './helpers/editEntry.js';
@@ -37,6 +38,7 @@ const formSection = document.getElementById('form-section');
 const userInfo = document.getElementById('user-info');
 const userName = document.getElementById('user-name');
 const loginTime = document.getElementById('login-time');
+const entriesCount = document.getElementById('entries-count');
 const logoutBtn = document.getElementById('logout-btn');
 
 // Elementy admina
@@ -177,8 +179,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (isAuthenticated) {
         loadEntriesData();
         loadModulesData();
+        loadEntriesCountData();
     }
 });
+
+// Pobieranie i wyświetlanie liczby wpisów
+async function loadEntriesCountData() {
+    console.log('loadEntriesCountData wywołane - entriesCount element:', entriesCount);
+    try {
+        const count = await loadEntriesCount();
+        console.log('loadEntriesCountData otrzymało count:', count, 'typ:', typeof count);
+        // Wyświetl zawsze, nawet jeśli 0
+        const displayCount = (count !== undefined && count !== null) ? count : 0;
+        console.log('loadEntriesCountData displayCount:', displayCount);
+        entriesCount.textContent = ` | Wpisów: ${displayCount}`;
+        console.log('loadEntriesCountData ustawiono tekst na:', entriesCount.textContent);
+    } catch (error) {
+        console.error('loadEntriesCountData Błąd:', error);
+        entriesCount.textContent = ' | Błąd licznika';
+    }
+}
 
 // Pobieranie wpisów i renderowanie
 async function loadEntriesData() {
@@ -230,6 +250,7 @@ entryForm.addEventListener('submit', async (e) => {
         resetForm(entryForm, entryId, formTitle, submitBtn, cancelBtn, formSection, addEntryBtn, moduleSelectGroup, moduleDisplayGroup);
         loadEntriesData();
         loadModulesData();
+        loadEntriesCountData();
     } catch (error) {
         console.error('Błąd:', error);
         alert('Błąd: ' + error.message);
@@ -310,6 +331,7 @@ window.deleteEntry = async function(id) {
         if (success) {
             loadEntriesData();
             loadModulesData();
+            loadEntriesCountData();
         } else {
             alert('Błąd podczas usuwania wpisu');
         }

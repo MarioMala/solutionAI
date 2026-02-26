@@ -45,22 +45,13 @@ app.use((req, res, next) => {
 // Trasy autoryzacji
 app.use('/api/auth', authRoutes);
 
-// GET - pobierz pojedynczy wpis (wymaga logowania)
-app.get('/api/entries/:id', requireAuth, async (req, res) => {
-    const id = req.params.id;
-    
-    if (!validateId(id)) {
-        return res.status(400).json({ error: ERROR_MESSAGES.INVALID_ID });
-    }
-    
+// GET - pobierz liczbę wpisów (wymaga logowania) - musi być PRZED /api/entries/:id
+app.get('/api/entries/count', requireAuth, async (req, res) => {
     try {
-        const [rows] = await pool.execute('SELECT * FROM entries WHERE id = ?', [id]);
-        if (rows.length === 0) {
-            return res.status(404).json({ error: 'Wpis nie znaleziony' });
-        }
-        res.json(rows[0]);
+        const [rows] = await pool.execute('SELECT COUNT(*) as count FROM entries');
+        res.json({ count: rows[0].count });
     } catch (err) {
-        console.error('Błąd SELECT:', err.message);
+        console.error('Błąd SELECT COUNT:', err.message);
         res.status(500).json({ error: ERROR_MESSAGES.INTERNAL_ERROR });
     }
 });
@@ -103,6 +94,26 @@ app.get('/api/entries', requireAuth, async (req, res) => {
 // GET - pobierz wszystkie moduły (wymaga logowania)
 app.get('/api/modules', requireAuth, (req, res) => {
     res.json(ALLOWED_MODULES);
+});
+
+// GET - pobierz pojedynczy wpis (wymaga logowania)
+app.get('/api/entries/:id', requireAuth, async (req, res) => {
+    const id = req.params.id;
+    
+    if (!validateId(id)) {
+        return res.status(400).json({ error: ERROR_MESSAGES.INVALID_ID });
+    }
+    
+    try {
+        const [rows] = await pool.execute('SELECT * FROM entries WHERE id = ?', [id]);
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Wpis nie znaleziony' });
+        }
+        res.json(rows[0]);
+    } catch (err) {
+        console.error('Błąd SELECT:', err.message);
+        res.status(500).json({ error: ERROR_MESSAGES.INTERNAL_ERROR });
+    }
 });
 
 // POST - dodaj nowy wpis (wymaga logowania)
